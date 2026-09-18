@@ -27,6 +27,9 @@ classifiers = [
 ]
 dependencies = ["numpy>=1.24"]
 
+[project.scripts]
+active-inference-mos-counterfactuals = "active_inference_neural_metacontrol.cli:main"
+
 [project.optional-dependencies]
 neural = ["torch>=2.2"]
 dev = [
@@ -49,4 +52,3 @@ pythonpath = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-

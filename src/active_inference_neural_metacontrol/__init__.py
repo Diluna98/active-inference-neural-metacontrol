@@ -15,6 +15,7 @@ from .information import (
     detection_probability_map,
     expected_information_gain,
 )
+from .mos_adapter import MOSFeatureBatch, build_mos_features
 from .selector import AllocationDecision, SelectionConstraints, select_allocation
 
 __all__ = [
@@ -24,11 +25,13 @@ __all__ = [
     "Allocation",
     "AllocationDecision",
     "ComputeProfile",
+    "MOSFeatureBatch",
     "ProfiledComputeCostModel",
     "SelectionConstraints",
     "SpatialFeatures",
     "SwitchingCostMatrix",
     "build_context_vector",
+    "build_mos_features",
     "build_spatial_features",
     "canonicalize_posterior",
     "categorical_fisher_map",

@@ -3,6 +3,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 pytest-cache-files-*/
+pytest-*-temp/
 .ruff_cache/
 .venv/
 build/
@@ -10,3 +11,5 @@ dist/
 *.pt
 *.pth
 data/generated/
+results/
+smoke-output*/

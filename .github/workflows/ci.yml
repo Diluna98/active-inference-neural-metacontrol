@@ -42,3 +42,19 @@ jobs:
         run: python -m pip install --upgrade pip && python -m pip install -e ".[neural,dev]"
       - name: Test neural forward and backward paths
         run: pytest -q tests/test_models.py
+
+  mos-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package and pinned MOS benchmark
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+          python -m pip install "active-inference-navigation-agent @ git+https://github.com/Diluna98/active-inference-navigation-agent.git@d749734fefcfcb0a9541633f2be0bd18a29a1d91"
+      - name: Test MOS adapter and matched-state generator
+        run: pytest -q tests/test_mos_adapter.py tests/test_counterfactuals.py

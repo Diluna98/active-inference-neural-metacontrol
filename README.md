@@ -123,9 +123,57 @@ Install the optional PyTorch model and development tools:
 python -m pip install -e ".[neural,dev]"
 ```
 
+The MOS adapter is intentionally an integration dependency rather than a core
+package dependency. Install the benchmark repository alongside this one:
+
+```bash
+python -m pip install "active-inference-navigation-agent @ git+https://github.com/Diluna98/active-inference-navigation-agent.git@d749734fefcfcb0a9541633f2be0bd18a29a1d91"
+```
+
+## Matched-state MOS data
+
+Generate labels for all 12 candidate allocations from the same decision states:
+
+```bash
+active-inference-mos-counterfactuals \
+  --instance-seeds 0 1 2 3 \
+  --reference-resolution 20 \
+  --reference-depth 1 \
+  --max-steps 50 \
+  --output-dir results/mos_counterfactuals
+```
+
+For each reference action at step `t`, the generator:
+
+1. maps the reference posterior into every candidate resolution without changing
+   its probability mass;
+2. gives every candidate the same executed action and observation at `t + 1`;
+3. times state inference, policy evaluation, and action selection for every
+   `(gamma, T)` candidate;
+4. executes each distinct candidate physical action once from the matched state;
+5. hands control back to a clone of the reference controller; and
+6. records success and remaining task cost for every allocation.
+
+Candidates that select the same physical action share the same task outcome.
+This avoids repeating identical environment rollouts while preserving separate
+inference-time measurements. Agent construction, posterior remapping, and other
+switch overhead are excluded from `compute_ms`; they belong in the explicit
+switching-cost model.
+
+The output directory contains:
+
+- `training_data.npz`: tensors and 12-way labels used for training;
+- `contexts.csv`: feature/label timing and state provenance;
+- `branches.csv`: one record per distinct physical-action intervention;
+- `reference_trajectory.csv`: the trajectory that defined matched states; and
+- `summary.json`: array shapes, counts, and allocation order.
+
+`--branch-stride N` evaluates every Nth context when producing an inexpensive
+pilot dataset. Use stride 1 for the final dataset.
+
 ## Current status
 
-The initial scaffold implements:
+The repository currently implements:
 
 - mass-preserving canonical belief transformations;
 - normalized native-resolution entropy;
@@ -135,11 +183,14 @@ The initial scaffold implements:
 - a small optional PyTorch success/task-cost network;
 - a separate profiled compute-cost model;
 - a transition-specific switching matrix; and
-- constrained allocation selection.
+- constrained allocation selection;
+- a live MOS-to-neural feature adapter; and
+- matched-state counterfactual generation for all 12 allocations.
 
-The next stage is an adapter that extracts these inputs at matched MOS decision
-states, followed by counterfactual data generation for all 12 allocations. No
-trained controller or performance claim is included yet.
+No trained controller or performance claim is included yet. The next stage is
+to generate a sufficiently broad training/validation corpus, train the task
+model, and compare it against fixed allocations and the interpretable
+Active-Inference metacontroller baseline.
 
 ## Development
 

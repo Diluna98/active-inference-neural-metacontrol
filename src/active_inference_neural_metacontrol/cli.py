@@ -5,8 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .allocations import Allocation
-from .counterfactuals import generate_mos_counterfactuals, save_counterfactual_dataset
+from .generation import GenerationConfig, generate_resumable_mos_counterfactuals
 
 
 def parse_args() -> argparse.Namespace:
@@ -20,21 +19,33 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--branch-stride", type=int, default=1)
     parser.add_argument("--message-passing-iterations", type=int, default=10)
     parser.add_argument("--policy-workers", type=int, default=1)
+    parser.add_argument("--instance-workers", type=int, default=1)
+    parser.add_argument(
+        "--resume",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="reuse completed per-instance shards (default: enabled)",
+    )
     parser.add_argument("--output-dir", type=Path, default=Path("results/mos_counterfactuals"))
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    dataset = generate_mos_counterfactuals(
+    dataset = generate_resumable_mos_counterfactuals(
         instance_seeds=args.instance_seeds,
-        reference_allocation=Allocation(args.reference_resolution, args.reference_depth),
-        max_steps=args.max_steps,
-        branch_stride=args.branch_stride,
-        message_passing_iterations=args.message_passing_iterations,
-        policy_workers=args.policy_workers,
+        output_dir=args.output_dir,
+        config=GenerationConfig(
+            reference_resolution=args.reference_resolution,
+            reference_depth=args.reference_depth,
+            max_steps=args.max_steps,
+            branch_stride=args.branch_stride,
+            message_passing_iterations=args.message_passing_iterations,
+            policy_workers=args.policy_workers,
+        ),
+        instance_workers=args.instance_workers,
+        resume=args.resume,
     )
-    save_counterfactual_dataset(dataset, args.output_dir)
     print(
         f"wrote {len(dataset.context_ids)} contexts and {len(dataset.branches)} "
         f"unique action branches to {args.output_dir}"

@@ -140,6 +140,7 @@ active-inference-mos-counterfactuals \
   --reference-resolution 20 \
   --reference-depth 1 \
   --max-steps 50 \
+  --instance-workers 4 \
   --output-dir results/mos_counterfactuals
 ```
 
@@ -170,6 +171,19 @@ The output directory contains:
 
 `--branch-stride N` evaluates every Nth context when producing an inexpensive
 pilot dataset. Use stride 1 for the final dataset.
+
+Generation is resumable by default. Each MOS instance is written independently
+under `OUTPUT_DIR/shards/instance-SEED`, and a completion marker records the
+exact generation configuration. Repeating the same command reuses compatible
+completed shards. Missing, interrupted, or configuration-mismatched shards are
+generated again before the final NPZ and CSV files are assembled in seed order.
+Use `--no-resume` to deliberately regenerate every requested instance.
+
+`--instance-workers` evaluates independent MOS instances in separate processes.
+Start with 2–4 workers, depending on available memory and physical CPU cores.
+Keep `--policy-workers 1` during instance-level parallel runs to avoid nested
+process oversubscription. If a run is interrupted, execute the identical command
+again; completed instances will print `[reuse]` and will not be recomputed.
 
 ## Train the task-performance model
 
@@ -225,7 +239,7 @@ The repository currently implements:
 - a transition-specific switching matrix; and
 - constrained allocation selection;
 - a live MOS-to-neural feature adapter; and
-- matched-state counterfactual generation for all 12 allocations.
+- parallel, resumable matched-state generation for all 12 allocations.
 
 No trained controller or performance claim is included yet. The next stage is
 to generate a sufficiently broad training/validation corpus, train the task

@@ -442,11 +442,73 @@ def generate_mos_counterfactuals(
 
 def _write_csv(path: Path, rows: tuple[dict[str, Any], ...]) -> None:
     if not rows:
+        path.unlink(missing_ok=True)
         return
     with path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _read_csv(path: Path) -> tuple[dict[str, Any], ...]:
+    if not path.is_file():
+        return ()
+    with path.open(newline="", encoding="utf-8") as stream:
+        return tuple(dict(row) for row in csv.DictReader(stream))
+
+
+def load_generated_counterfactuals(output_dir: Path) -> CounterfactualDataset:
+    """Load one dataset written by :func:`save_counterfactual_dataset`."""
+
+    output_dir = Path(output_dir)
+    with np.load(output_dir / "training_data.npz", allow_pickle=False) as archive:
+        allocations = tuple(
+            Allocation(int(resolution), int(depth))
+            for resolution, depth in zip(archive["resolutions"], archive["depths"], strict=True)
+        )
+        return CounterfactualDataset(
+            spatial=archive["spatial"].copy(),
+            context=archive["context"].copy(),
+            success=archive["success"].copy(),
+            task_cost=archive["task_cost"].copy(),
+            compute_ms=archive["compute_ms"].copy(),
+            candidate_actions=archive["candidate_actions"].copy(),
+            context_ids=tuple(archive["context_ids"].astype(str).tolist()),
+            allocations=allocations,
+            contexts=_read_csv(output_dir / "contexts.csv"),
+            branches=_read_csv(output_dir / "branches.csv"),
+            trajectory=_read_csv(output_dir / "reference_trajectory.csv"),
+        )
+
+
+def concatenate_counterfactual_datasets(
+    datasets: Sequence[CounterfactualDataset],
+) -> CounterfactualDataset:
+    """Combine ordered per-instance shards into one training dataset."""
+
+    values = tuple(datasets)
+    if not values:
+        raise ValueError("at least one dataset is required")
+    allocations = values[0].allocations
+    if any(dataset.allocations != allocations for dataset in values[1:]):
+        raise ValueError("all datasets must use the same allocation order")
+
+    def concatenate(name: str) -> np.ndarray:
+        return np.concatenate([np.asarray(getattr(dataset, name)) for dataset in values], axis=0)
+
+    return CounterfactualDataset(
+        spatial=concatenate("spatial").astype(np.float32),
+        context=concatenate("context").astype(np.float32),
+        success=concatenate("success").astype(np.float32),
+        task_cost=concatenate("task_cost").astype(np.float32),
+        compute_ms=concatenate("compute_ms").astype(np.float32),
+        candidate_actions=concatenate("candidate_actions").astype(np.int8),
+        context_ids=tuple(value for dataset in values for value in dataset.context_ids),
+        allocations=allocations,
+        contexts=tuple(value for dataset in values for value in dataset.contexts),
+        branches=tuple(value for dataset in values for value in dataset.branches),
+        trajectory=tuple(value for dataset in values for value in dataset.trajectory),
+    )
 
 
 def save_counterfactual_dataset(dataset: CounterfactualDataset, output_dir: Path) -> None:

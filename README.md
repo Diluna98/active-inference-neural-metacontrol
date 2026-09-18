@@ -171,6 +171,46 @@ The output directory contains:
 `--branch-stride N` evaluates every Nth context when producing an inexpensive
 pilot dataset. Use stride 1 for the final dataset.
 
+## Train the task-performance model
+
+Install the neural extra and train from a generated dataset:
+
+```bash
+python -m pip install -e ".[neural,dev]"
+
+active-inference-train-metacontroller \
+  --dataset-dir results/mos_pilot \
+  --output-dir results/mos_pilot_model \
+  --epochs 200 \
+  --batch-size 32 \
+  --patience 25 \
+  --seed 0
+```
+
+Splitting is performed by MOS instance, not by individual decision context.
+Every state from one map/target/sensor trajectory therefore belongs entirely to
+the training, validation, or test set. The saved split is recorded in both the
+checkpoint and metrics report.
+
+The trainer standardizes nonspatial context using training-set statistics,
+optimizes binary success prediction and log-scale task-cost regression, applies
+validation-based early stopping, and reports allocation-level performance on
+all three splits. Test metrics include:
+
+- success Brier score and classification accuracy;
+- task-cost MAE and RMSE;
+- realized success and task cost of the network-selected allocation;
+- regret relative to the matched counterfactual oracle; and
+- all 12 fixed-allocation baselines.
+
+Use `--compute-budget-ms` to exclude allocations whose training-set median
+inference time exceeds a deadline. Computation remains an independently measured
+profile and is not learned by the task network.
+
+Training writes `best_model.pt`, `history.csv`, `metrics.json`, and
+`predictions.npz`. The 10-instance pilot is suitable only for an end-to-end
+sanity check; scientific training requires a larger instance-disjoint corpus.
+
 ## Current status
 
 The repository currently implements:

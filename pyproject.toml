@@ -29,6 +29,7 @@ dependencies = ["numpy>=1.24"]
 
 [project.scripts]
 active-inference-mos-counterfactuals = "active_inference_neural_metacontrol.cli:main"
+active-inference-train-metacontroller = "active_inference_neural_metacontrol.train_cli:main"
 
 [project.optional-dependencies]
 neural = ["torch>=2.2"]

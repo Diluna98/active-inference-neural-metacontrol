@@ -37,10 +37,12 @@ if nn is not None:
                 nn.MaxPool2d(kernel_size=2),
                 nn.Conv2d(16, 32, kernel_size=3, padding=1),
                 nn.ReLU(),
-                nn.AdaptiveAvgPool2d((1, 1)),
+                # Preserve coarse absolute and relational geometry. A global
+                # 1x1 average would make distinct MOS layouts too similar.
+                nn.AdaptiveAvgPool2d((5, 5)),
             )
             self.fusion = nn.Sequential(
-                nn.Linear(32 + context_features, 64),
+                nn.Linear(32 * 5 * 5 + context_features, 64),
                 nn.ReLU(),
                 nn.Linear(64, 64),
                 nn.ReLU(),

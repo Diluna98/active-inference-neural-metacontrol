@@ -41,7 +41,7 @@ jobs:
       - name: Install neural package
         run: python -m pip install --upgrade pip && python -m pip install -e ".[neural,dev]"
       - name: Test neural forward and backward paths
-        run: pytest -q tests/test_models.py
+        run: pytest -q tests/test_models.py tests/test_training.py
 
   mos-integration:
     runs-on: ubuntu-latest

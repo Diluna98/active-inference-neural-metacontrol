@@ -9,6 +9,12 @@ from .beliefs import (
     remap_posterior,
 )
 from .costs import ComputeProfile, ProfiledComputeCostModel, SwitchingCostMatrix
+from .datasets import (
+    CounterfactualArrays,
+    DatasetSplit,
+    load_counterfactual_dataset,
+    split_by_instance,
+)
 from .features import SpatialFeatures, build_context_vector, build_spatial_features
 from .information import (
     categorical_fisher_map,
@@ -25,6 +31,8 @@ __all__ = [
     "Allocation",
     "AllocationDecision",
     "ComputeProfile",
+    "CounterfactualArrays",
+    "DatasetSplit",
     "MOSFeatureBatch",
     "ProfiledComputeCostModel",
     "SelectionConstraints",
@@ -38,8 +46,10 @@ __all__ = [
     "detection_probability_map",
     "expected_information_gain",
     "information_loss",
+    "load_counterfactual_dataset",
     "normalized_entropy",
     "project_canonical",
     "remap_posterior",
     "select_allocation",
+    "split_by_instance",
 ]

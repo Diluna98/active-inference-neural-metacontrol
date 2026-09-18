@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "active-inference-neural-metacontrol"
+version = "0.1.0"
+description = "Belief-conditioned neural resource allocation for Active Inference."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Diluna A. Warnakulasuriya" }]
+keywords = [
+  "active-inference",
+  "metacontrol",
+  "adaptive-computation",
+  "multi-object-search",
+  "robotics",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+neural = ["torch>=2.2"]
+dev = [
+  "build>=1.2",
+  "pytest>=7.4",
+  "ruff>=0.5",
+]
+
+[project.urls]
+Repository = "https://github.com/Diluna98/active-inference-neural-metacontrol"
+Issues = "https://github.com/Diluna98/active-inference-neural-metacontrol/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+

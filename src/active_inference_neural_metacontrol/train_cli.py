@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--validation-fraction", type=float, default=0.15)
     parser.add_argument("--test-fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--split-seed",
+        type=int,
+        help="dataset-split seed; defaults to --seed for backward compatibility",
+    )
     parser.add_argument("--device", default="auto")
     return parser.parse_args()
 
@@ -44,7 +49,7 @@ def main() -> None:
         dataset,
         validation_fraction=args.validation_fraction,
         test_fraction=args.test_fraction,
-        seed=args.seed,
+        seed=args.seed if args.split_seed is None else args.split_seed,
     )
     report = train_task_model(
         split,

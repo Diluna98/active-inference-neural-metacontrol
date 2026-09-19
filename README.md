@@ -222,6 +222,10 @@ active-inference-train-metacontroller \
   --seed 0
 ```
 
+For repeated neural initializations on exactly the same data split, keep
+`--split-seed` fixed while changing `--seed`. This separates model variance
+from train/test-partition variance.
+
 Splitting is performed by MOS instance, not by individual decision context.
 Every state from one map/target/sensor trajectory therefore belongs entirely to
 the training, validation, or test set. The saved split is recorded in both the

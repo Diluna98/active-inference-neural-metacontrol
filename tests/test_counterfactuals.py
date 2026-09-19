@@ -13,6 +13,7 @@ from active_inference_neural_metacontrol.counterfactuals import (
 )
 from active_inference_neural_metacontrol.generation import (
     GenerationConfig,
+    generate_balanced_mos_counterfactuals,
     generate_resumable_mos_counterfactuals,
 )
 
@@ -34,8 +35,11 @@ def test_small_counterfactual_dataset_is_aligned_and_serializable():
     assert dataset.success.shape == (1, 2)
     assert dataset.task_cost.shape == (1, 2)
     assert dataset.compute_ms.shape == (1, 2)
+    assert dataset.switch_ms.shape == (1, 2)
     assert dataset.candidate_actions.shape == (1, 2)
     assert np.all(dataset.compute_ms >= 0.0)
+    assert np.all(dataset.switch_ms >= 0.0)
+    assert dataset.switch_ms[0, 0] == 0.0
     assert dataset.contexts[0]["candidate_decision"] == 1
     assert [row["decision"] for row in dataset.trajectory] == [0, 1]
 
@@ -81,3 +85,32 @@ def test_resumable_generation_reuses_compatible_shards():
     assert json.loads((output_dir / "generation_manifest.json").read_text())["contexts"] == len(
         second.context_ids
     )
+
+
+def test_balanced_generation_round_robins_source_allocations():
+    output_dir = Path("data/generated/test-balanced")
+    sources = (Allocation(2, 1), Allocation(5, 1))
+    config = GenerationConfig(
+        reference_resolution=2,
+        reference_depth=1,
+        max_steps=2,
+        message_passing_iterations=1,
+        allocations=((2, 1), (5, 1)),
+    )
+    dataset = generate_balanced_mos_counterfactuals(
+        instance_seeds=[10, 11],
+        output_dir=output_dir,
+        config=config,
+        source_allocations=sources,
+    )
+
+    sources_by_seed = {
+        int(row["instance_seed"]): (
+            int(row["reference_resolution"]),
+            int(row["reference_depth"]),
+        )
+        for row in dataset.contexts
+    }
+    assert sources_by_seed == {10: (2, 1), 11: (5, 1)}
+    manifest = json.loads((output_dir / "generation_manifest.json").read_text())
+    assert manifest["source_mode"] == "balanced_round_robin"

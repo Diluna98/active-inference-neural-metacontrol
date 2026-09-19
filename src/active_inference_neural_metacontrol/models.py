@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover - exercised only without the optional ex
 if nn is not None:
 
     class TaskPerformanceNetwork(nn.Module):
-        """Small CNN/MLP predicting success and task cost for every allocation."""
+        """Small CNN/MLP predicting success and relative cost for every allocation."""
 
         def __init__(
             self,
@@ -48,14 +48,14 @@ if nn is not None:
                 nn.ReLU(),
             )
             self.success_head = nn.Linear(64, allocations)
-            self.task_cost_head = nn.Linear(64, allocations)
+            self.relative_cost_head = nn.Linear(64, allocations)
 
         def forward(self, spatial, context):
             encoded = self.spatial_encoder(spatial).flatten(start_dim=1)
             fused = self.fusion(torch.cat((encoded, context), dim=1))
             return {
                 "success_logits": self.success_head(fused),
-                "task_cost": functional.softplus(self.task_cost_head(fused)),
+                "relative_cost": functional.softplus(self.relative_cost_head(fused)),
             }
 
     def task_performance_loss(
@@ -64,19 +64,31 @@ if nn is not None:
         success_target,
         task_cost_target,
         success_weight: float = 1.0,
-        task_cost_weight: float = 1.0,
+        relative_cost_weight: float = 1.0,
+        ranking_weight: float = 1.0,
+        ranking_temperature: float = 5.0,
     ):
-        """Joint auxiliary success and positive cost-regression objective."""
+        """Joint success, relative-regret regression, and listwise ranking objective."""
 
         success_loss = functional.binary_cross_entropy_with_logits(
             prediction["success_logits"],
             success_target,
         )
-        task_loss = functional.smooth_l1_loss(
-            torch.log1p(prediction["task_cost"]),
-            torch.log1p(task_cost_target),
+        relative_target = task_cost_target - task_cost_target.min(dim=1, keepdim=True).values
+        relative_loss = functional.smooth_l1_loss(
+            torch.log1p(prediction["relative_cost"]),
+            torch.log1p(relative_target),
         )
-        return success_weight * success_loss + task_cost_weight * task_loss
+        target_probability = functional.softmax(-relative_target / ranking_temperature, dim=1)
+        predicted_log_probability = functional.log_softmax(
+            -prediction["relative_cost"] / ranking_temperature, dim=1
+        )
+        ranking_loss = -(target_probability * predicted_log_probability).sum(dim=1).mean()
+        return (
+            success_weight * success_loss
+            + relative_cost_weight * relative_loss
+            + ranking_weight * ranking_loss
+        )
 
 else:
 

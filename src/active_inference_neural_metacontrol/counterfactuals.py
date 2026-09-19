@@ -8,6 +8,7 @@ import json
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,7 @@ class CounterfactualDataset:
     success: np.ndarray
     task_cost: np.ndarray
     compute_ms: np.ndarray
+    switch_ms: np.ndarray
     candidate_actions: np.ndarray
     context_ids: tuple[str, ...]
     allocations: tuple[Allocation, ...]
@@ -207,6 +209,7 @@ def _empty_dataset(allocations: tuple[Allocation, ...]) -> CounterfactualDataset
         success=np.empty((0, len(allocations)), dtype=np.float32),
         task_cost=np.empty((0, len(allocations)), dtype=np.float32),
         compute_ms=np.empty((0, len(allocations)), dtype=np.float32),
+        switch_ms=np.empty((0, len(allocations)), dtype=np.float32),
         candidate_actions=np.empty((0, len(allocations)), dtype=np.int8),
         context_ids=(),
         allocations=allocations,
@@ -250,6 +253,7 @@ def generate_mos_counterfactuals(
     success_rows: list[np.ndarray] = []
     task_cost_rows: list[np.ndarray] = []
     compute_rows: list[np.ndarray] = []
+    switch_rows: list[np.ndarray] = []
     action_rows: list[np.ndarray] = []
     context_ids: list[str] = []
     context_records: list[dict[str, Any]] = []
@@ -323,20 +327,28 @@ def generate_mos_counterfactuals(
                 break
 
             next_decision_index = decision + 1
-            candidate_agents = {
-                allocation: _build_switched_agent(
-                    source_agent=reference_agent,
-                    source_allocation=reference_allocation,
-                    target_allocation=allocation,
-                    layout=instance.layout,
-                    executed_action=reference_decision.action,
-                    next_time_step=next_decision_index,
-                    message_passing_iterations=message_passing_iterations,
-                    policy_workers=policy_workers,
-                    mos=mos,
+            candidate_agents = {}
+            switch_times = {}
+            for allocation in allocation_tuple:
+                candidate_agents[allocation], switch_times[allocation] = _timed(
+                    partial(
+                        _build_switched_agent,
+                        source_agent=reference_agent,
+                        source_allocation=reference_allocation,
+                        target_allocation=allocation,
+                        layout=instance.layout,
+                        executed_action=reference_decision.action,
+                        next_time_step=next_decision_index,
+                        message_passing_iterations=message_passing_iterations,
+                        policy_workers=policy_workers,
+                        mos=mos,
+                    )
                 )
-                for allocation in allocation_tuple
-            }
+                if allocation == reference_allocation:
+                    # A deployed controller carries its existing agent forward
+                    # when the allocation is unchanged. Rebuilding here is only
+                    # needed to keep counterfactual branches isolated.
+                    switch_times[allocation] = 0.0
             next_decisions = {
                 allocation: _infer_decision(
                     candidate_agents[allocation],
@@ -389,6 +401,9 @@ def generate_mos_counterfactuals(
                     [next_decisions[a].total_ms for a in allocation_tuple],
                     dtype=np.float32,
                 )
+                switching = np.asarray(
+                    [switch_times[a] for a in allocation_tuple], dtype=np.float32
+                )
                 actions = np.asarray(
                     [int(next_decisions[a].action) for a in allocation_tuple], dtype=np.int8
                 )
@@ -397,6 +412,7 @@ def generate_mos_counterfactuals(
                 success_rows.append(successes)
                 task_cost_rows.append(costs)
                 compute_rows.append(compute)
+                switch_rows.append(switching)
                 action_rows.append(actions)
                 context_ids.append(context_id)
                 context_records.append(
@@ -431,6 +447,7 @@ def generate_mos_counterfactuals(
         success=np.stack(success_rows).astype(np.float32),
         task_cost=np.stack(task_cost_rows).astype(np.float32),
         compute_ms=np.stack(compute_rows).astype(np.float32),
+        switch_ms=np.stack(switch_rows).astype(np.float32),
         candidate_actions=np.stack(action_rows).astype(np.int8),
         context_ids=tuple(context_ids),
         allocations=allocation_tuple,
@@ -472,6 +489,11 @@ def load_generated_counterfactuals(output_dir: Path) -> CounterfactualDataset:
             success=archive["success"].copy(),
             task_cost=archive["task_cost"].copy(),
             compute_ms=archive["compute_ms"].copy(),
+            switch_ms=(
+                archive["switch_ms"].copy()
+                if "switch_ms" in archive.files
+                else np.zeros_like(archive["compute_ms"])
+            ),
             candidate_actions=archive["candidate_actions"].copy(),
             context_ids=tuple(archive["context_ids"].astype(str).tolist()),
             allocations=allocations,
@@ -502,6 +524,7 @@ def concatenate_counterfactual_datasets(
         success=concatenate("success").astype(np.float32),
         task_cost=concatenate("task_cost").astype(np.float32),
         compute_ms=concatenate("compute_ms").astype(np.float32),
+        switch_ms=concatenate("switch_ms").astype(np.float32),
         candidate_actions=concatenate("candidate_actions").astype(np.int8),
         context_ids=tuple(value for dataset in values for value in dataset.context_ids),
         allocations=allocations,
@@ -522,6 +545,7 @@ def save_counterfactual_dataset(dataset: CounterfactualDataset, output_dir: Path
         success=dataset.success,
         task_cost=dataset.task_cost,
         compute_ms=dataset.compute_ms,
+        switch_ms=dataset.switch_ms,
         candidate_actions=dataset.candidate_actions,
         context_ids=np.asarray(dataset.context_ids),
         resolutions=np.asarray([item.resolution for item in dataset.allocations]),

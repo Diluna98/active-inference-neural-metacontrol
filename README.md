@@ -26,7 +26,7 @@ policy confidence and current allocation
                     v
        small CNN/MLP task model
                     |
-       success probability + task cost
+       success probability + relative task regret
 
 candidate allocation + measured machine profile
                     |
@@ -144,6 +144,24 @@ active-inference-mos-counterfactuals \
   --output-dir results/mos_counterfactuals
 ```
 
+For scientific training, vary the source allocation as well as evaluating all
+12 candidates. On PowerShell, this command assigns the 200 instances
+round-robin across all 12 source `(gamma, T)` configurations:
+
+```powershell
+active-inference-mos-counterfactuals `
+  --instance-seeds (1000..1199) `
+  --balanced-sources `
+  --max-steps 50 `
+  --instance-workers 4 `
+  --output-dir results/mos_balanced_200
+```
+
+Thus the input belief is no longer always produced by `(gamma=20, T=1)`.
+Source allocation is retained in every shard and context, and train/validation/
+test splitting is stratified by source allocation. Each source requires at
+least three MOS instances so all three splits can contain it.
+
 For each reference action at step `t`, the generator:
 
 1. maps the reference posterior into every candidate resolution without changing
@@ -158,8 +176,10 @@ For each reference action at step `t`, the generator:
 Candidates that select the same physical action share the same task outcome.
 This avoids repeating identical environment rollouts while preserving separate
 inference-time measurements. Agent construction, posterior remapping, and other
-switch overhead are excluded from `compute_ms`; they belong in the explicit
-switching-cost model.
+switch overhead are excluded from `compute_ms` and separately recorded in
+`switch_ms` for the explicit switching-cost model. The no-change diagonal is
+zero: rebuilding an identical agent is needed only for counterfactual isolation,
+not during deployment where the existing agent is carried forward.
 
 The output directory contains:
 
@@ -195,6 +215,7 @@ python -m pip install -e ".[neural,dev]"
 active-inference-train-metacontroller \
   --dataset-dir results/mos_pilot \
   --output-dir results/mos_pilot_model \
+  --timing-profile results/mos_timing_profile/timing_profile.json \
   --epochs 200 \
   --batch-size 32 \
   --patience 25 \
@@ -206,24 +227,55 @@ Every state from one map/target/sensor trajectory therefore belongs entirely to
 the training, validation, or test set. The saved split is recorded in both the
 checkpoint and metrics report.
 
-The trainer standardizes nonspatial context using training-set statistics,
-optimizes binary success prediction and log-scale task-cost regression, applies
-validation-based early stopping, and reports allocation-level performance on
-all three splits. Test metrics include:
+The trainer standardizes nonspatial context using training-set statistics. It
+optimizes binary success prediction, log-scale relative regret
+`J(gamma,T) - min J`, and a listwise ranking loss over the 12 candidates. This
+targets the allocation decision directly instead of requiring the network to
+learn instance-dependent absolute cost offsets. Validation-based early stopping
+and allocation-level evaluation are applied on all three splits. Test metrics
+include:
 
 - success Brier score and classification accuracy;
-- task-cost MAE and RMSE;
+- relative-cost MAE and RMSE;
 - realized success and task cost of the network-selected allocation;
 - regret relative to the matched counterfactual oracle; and
 - all 12 fixed-allocation baselines.
 
-Use `--compute-budget-ms` to exclude allocations whose training-set median
-inference time exceeds a deadline. Computation remains an independently measured
-profile and is not learned by the task network.
+Use `--compute-budget-ms` to exclude allocations whose controlled median
+inference time exceeds a deadline. With `--timing-profile`, the checkpoint also
+stores the complete controlled source-to-target switching matrix. Without that
+option, training falls back to the training-set median inference time and does
+not claim a calibrated switching matrix. Computation remains independently
+measured and is not learned by the task network.
 
 Training writes `best_model.pt`, `history.csv`, `metrics.json`, and
 `predictions.npz`. The 10-instance pilot is suitable only for an end-to-end
 sanity check; scientific training requires a larger instance-disjoint corpus.
+
+## Controlled timing profile
+
+Do not use parallel data-generation timings as a machine profile. Generate a
+small balanced corpus with one instance worker, then summarize both steady
+inference latency and the full source-to-target switching matrix:
+
+```powershell
+active-inference-mos-counterfactuals `
+  --instance-seeds (2000..2023) `
+  --balanced-sources `
+  --max-steps 20 `
+  --branch-stride 5 `
+  --instance-workers 1 `
+  --output-dir results/mos_timing_profile
+
+active-inference-profile-metacontrol `
+  --dataset-dir results/mos_timing_profile `
+  --output results/mos_timing_profile/timing_profile.json
+```
+
+The profiler refuses multi-worker measurements by default because concurrent
+instances distort latency. Its JSON output reports median and p95 inference
+time for every candidate and median/p95 switching time for every observed
+source-to-target pair.
 
 ## Current status
 
@@ -234,12 +286,14 @@ The repository currently implements:
 - Jensen-Shannon information-loss measurement;
 - canonical visibility and categorical Fisher maps;
 - spatial and nonspatial feature assembly;
-- a small optional PyTorch success/task-cost network;
+- a small optional PyTorch success/relative-regret network with ranking loss;
 - a separate profiled compute-cost model;
 - a transition-specific switching matrix; and
 - constrained allocation selection;
 - a live MOS-to-neural feature adapter; and
-- parallel, resumable matched-state generation for all 12 allocations.
+- parallel, resumable matched-state generation for all 12 allocations;
+- balanced source-allocation scheduling and stratified splitting; and
+- controlled inference and switching-time profiling.
 
 No trained controller or performance claim is included yet. The next stage is
 to generate a sufficiently broad training/validation corpus, train the task

@@ -18,9 +18,12 @@ def test_training_pipeline_writes_checkpoint_and_metrics():
         success=rng.integers(0, 2, (samples, 12)).astype(np.float32),
         task_cost=(1 + 20 * rng.random((samples, 12))).astype(np.float32),
         compute_ms=(1 + rng.random((samples, 12))).astype(np.float32),
+        switch_ms=rng.random((samples, 12)).astype(np.float32),
         candidate_actions=rng.integers(0, 5, (samples, 12), dtype=np.int8),
         context_ids=np.asarray([f"context-{index}" for index in range(samples)]),
         instance_seeds=np.repeat(np.arange(6), 2),
+        source_resolution=np.full(samples, 20),
+        source_depth=np.ones(samples, dtype=int),
     )
     split = split_by_instance(arrays, seed=1)
     output = Path("data/generated/test-training")

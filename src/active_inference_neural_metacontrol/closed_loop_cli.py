@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--compute-budget-ms", type=float, default=100.0)
     parser.add_argument("--information-loss-limit", type=float, default=0.15)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--torch-threads", type=int, default=1)
     parser.add_argument("--adaptive-only", action="store_true")
     parser.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     return parser.parse_args()
@@ -47,6 +48,7 @@ def main() -> None:
             compute_budget_ms=args.compute_budget_ms,
             information_loss_limit=args.information_loss_limit,
             device=args.device,
+            torch_threads=args.torch_threads,
             include_fixed=not args.adaptive_only,
         ),
     )

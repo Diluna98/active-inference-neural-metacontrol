@@ -45,6 +45,7 @@ class ClosedLoopConfig:
     compute_budget_ms: float = 100.0
     information_loss_limit: float = 0.15
     device: str = "cpu"
+    torch_threads: int = 1
     include_fixed: bool = True
 
     def __post_init__(self) -> None:
@@ -53,6 +54,8 @@ class ClosedLoopConfig:
             raise ValueError("max_steps must be positive")
         if self.message_passing_iterations < 1 or self.policy_workers < 1:
             raise ValueError("inference settings must be positive")
+        if self.torch_threads < 1:
+            raise ValueError("torch_threads must be positive")
         SelectionConstraints(
             success_threshold=self.success_threshold,
             compute_budget_ms=self.compute_budget_ms,
@@ -75,9 +78,10 @@ class ClosedLoopConfig:
 class NeuralMetaController:
     """Checkpoint-backed allocation selector with explicit resource constraints."""
 
-    def __init__(self, checkpoint: Path, *, device: str = "cpu") -> None:
+    def __init__(self, checkpoint: Path, *, device: str = "cpu", torch_threads: int = 1) -> None:
         if torch is None:
             raise ImportError("closed-loop neural evaluation requires PyTorch")
+        torch.set_num_threads(torch_threads)
         self.device = torch.device(device)
         payload = torch.load(Path(checkpoint), map_location=self.device, weights_only=False)
         self.model = TaskPerformanceNetwork(
@@ -244,7 +248,11 @@ def run_adaptive_episode(
     observation = environment.reset(noise_quantile=float(quantiles[0]))
     allocation = config.initial_allocation
     agent = _build_agent(allocation, instance.layout, config, mos)
-    controller = NeuralMetaController(Path(config.checkpoint), device=config.device)
+    controller = NeuralMetaController(
+        Path(config.checkpoint),
+        device=config.device,
+        torch_threads=config.torch_threads,
+    )
     previous_action = None
     task_cost = 0.0
     task_inference_ms = 0.0

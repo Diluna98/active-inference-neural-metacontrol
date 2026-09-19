@@ -154,6 +154,7 @@ active-inference-mos-counterfactuals `
   --balanced-sources `
   --max-steps 50 `
   --instance-workers 4 `
+  --torch-threads 1 `
   --output-dir results/mos_balanced_200
 ```
 
@@ -311,7 +312,9 @@ By default, the same instance and common random sensor sequence are also run
 through all 12 fixed allocations. Evaluation is resumable per instance and
 safe against configuration or checkpoint changes. Use `--adaptive-only` for a
 quick controller smoke test. Keep `--policy-workers 1` when using multiple
-instance workers.
+instance workers. Keep `--torch-threads 1` as well; the network is small, and
+multiple PyTorch thread pools otherwise oversubscribe the CPU and distort its
+measured overhead.
 
 The output contains:
 

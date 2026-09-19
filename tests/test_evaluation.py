@@ -15,16 +15,19 @@ def test_evaluation_uses_realized_labels_and_reports_oracle_regret():
         success=np.ones((samples, 12), dtype=np.float32),
         task_cost=task_cost,
         compute_ms=np.ones((samples, 12), dtype=np.float32),
+        switch_ms=np.zeros((samples, 12), dtype=np.float32),
         candidate_actions=np.zeros((samples, 12), dtype=np.int8),
         context_ids=np.asarray(["a", "b"]),
         instance_seeds=np.asarray([0, 1]),
+        source_resolution=np.full(samples, 20),
+        source_depth=np.ones(samples, dtype=int),
     )
     prediction = task_cost.copy()
 
     metrics = evaluate_predictions(
         arrays,
         success_probability=np.full((samples, 12), 0.9),
-        task_cost_prediction=prediction,
+        relative_cost_prediction=prediction - prediction.min(axis=1, keepdims=True),
         compute_profile_ms=np.ones(12),
         success_threshold=0.5,
         compute_budget_ms=None,

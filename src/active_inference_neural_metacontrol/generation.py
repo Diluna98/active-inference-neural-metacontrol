@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from .allocations import ALLOCATIONS, Allocation
@@ -88,18 +88,17 @@ def _generate_shard(
     return instance_seed, len(dataset.context_ids), len(dataset.branches)
 
 
-def generate_resumable_mos_counterfactuals(
+def _generate_schedule(
     *,
-    instance_seeds: list[int] | tuple[int, ...],
+    schedule: tuple[tuple[int, GenerationConfig], ...],
     output_dir: Path,
-    config: GenerationConfig | None = None,
     instance_workers: int = 1,
     resume: bool = True,
+    source_mode: str,
 ) -> CounterfactualDataset:
-    """Generate per-instance shards in parallel and assemble them deterministically."""
+    """Generate a possibly heterogeneous per-instance configuration schedule."""
 
-    config = config or GenerationConfig()
-    seeds = tuple(int(value) for value in instance_seeds)
+    seeds = tuple(seed for seed, _ in schedule)
     if not seeds or len(set(seeds)) != len(seeds):
         raise ValueError("instance_seeds must be nonempty and unique")
     if instance_workers < 1:
@@ -108,15 +107,15 @@ def generate_resumable_mos_counterfactuals(
     shard_root = output_dir / "shards"
     shard_root.mkdir(parents=True, exist_ok=True)
     pending = []
-    for seed in seeds:
+    for seed, config in schedule:
         shard_dir = shard_root / f"instance-{seed}"
         if resume and _is_complete(shard_dir, seed, config):
             print(f"[reuse] instance={seed}", flush=True)
         else:
-            pending.append((seed, shard_dir))
+            pending.append((seed, config, shard_dir))
 
     if instance_workers == 1:
-        for completed, (seed, shard_dir) in enumerate(pending, start=1):
+        for completed, (seed, config, shard_dir) in enumerate(pending, start=1):
             _, contexts, branches = _generate_shard(seed, config, shard_dir)
             print(
                 f"[generate {completed}/{len(pending)}] instance={seed} "
@@ -127,7 +126,7 @@ def generate_resumable_mos_counterfactuals(
         with ProcessPoolExecutor(max_workers=instance_workers) as executor:
             futures = {
                 executor.submit(_generate_shard, seed, config, shard_dir): seed
-                for seed, shard_dir in pending
+                for seed, config, shard_dir in pending
             }
             for completed, future in enumerate(as_completed(futures), start=1):
                 seed, contexts, branches = future.result()
@@ -138,7 +137,9 @@ def generate_resumable_mos_counterfactuals(
                 )
 
     missing = [
-        seed for seed in seeds if not _is_complete(shard_root / f"instance-{seed}", seed, config)
+        seed
+        for seed, config in schedule
+        if not _is_complete(shard_root / f"instance-{seed}", seed, config)
     ]
     if missing:
         raise RuntimeError(f"generation did not complete for instances: {missing}")
@@ -149,7 +150,16 @@ def generate_resumable_mos_counterfactuals(
         "instance_seeds": list(seeds),
         "instance_workers": instance_workers,
         "resume": resume,
-        "configuration": asdict(config),
+        "source_mode": source_mode,
+        "schedule": [
+            {
+                "instance_seed": seed,
+                "source_resolution": config.reference_resolution,
+                "source_depth": config.reference_depth,
+            }
+            for seed, config in schedule
+        ],
+        "configuration": asdict(schedule[0][1]),
         "contexts": len(combined.context_ids),
         "branches": len(combined.branches),
     }
@@ -157,3 +167,63 @@ def generate_resumable_mos_counterfactuals(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
     return combined
+
+
+def generate_resumable_mos_counterfactuals(
+    *,
+    instance_seeds: list[int] | tuple[int, ...],
+    output_dir: Path,
+    config: GenerationConfig | None = None,
+    instance_workers: int = 1,
+    resume: bool = True,
+) -> CounterfactualDataset:
+    """Generate fixed-source per-instance shards and assemble them deterministically."""
+
+    config = config or GenerationConfig()
+    seeds = tuple(int(value) for value in instance_seeds)
+    schedule = tuple((seed, config) for seed in seeds)
+    return _generate_schedule(
+        schedule=schedule,
+        output_dir=output_dir,
+        instance_workers=instance_workers,
+        resume=resume,
+        source_mode="fixed",
+    )
+
+
+def generate_balanced_mos_counterfactuals(
+    *,
+    instance_seeds: list[int] | tuple[int, ...],
+    output_dir: Path,
+    config: GenerationConfig | None = None,
+    source_allocations: tuple[Allocation, ...] = ALLOCATIONS,
+    instance_workers: int = 1,
+    resume: bool = True,
+) -> CounterfactualDataset:
+    """Round-robin source allocations while evaluating every candidate allocation."""
+
+    base = config or GenerationConfig()
+    seeds = tuple(int(value) for value in instance_seeds)
+    if not source_allocations or len(set(source_allocations)) != len(source_allocations):
+        raise ValueError("source_allocations must be nonempty and unique")
+    candidate_allocations = set(base.allocation_objects)
+    if not set(source_allocations).issubset(candidate_allocations):
+        raise ValueError("every source allocation must also be a candidate allocation")
+    schedule = tuple(
+        (
+            seed,
+            replace(
+                base,
+                reference_resolution=source_allocations[index % len(source_allocations)].resolution,
+                reference_depth=source_allocations[index % len(source_allocations)].depth,
+            ),
+        )
+        for index, seed in enumerate(seeds)
+    )
+    return _generate_schedule(
+        schedule=schedule,
+        output_dir=output_dir,
+        instance_workers=instance_workers,
+        resume=resume,
+        source_mode="balanced_round_robin",
+    )

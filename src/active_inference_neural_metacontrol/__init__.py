@@ -16,7 +16,11 @@ from .datasets import (
     split_by_instance,
 )
 from .features import SpatialFeatures, build_context_vector, build_spatial_features
-from .generation import GenerationConfig, generate_resumable_mos_counterfactuals
+from .generation import (
+    GenerationConfig,
+    generate_balanced_mos_counterfactuals,
+    generate_resumable_mos_counterfactuals,
+)
 from .information import (
     categorical_fisher_map,
     detection_probability_map,
@@ -47,6 +51,7 @@ __all__ = [
     "categorical_fisher_map",
     "detection_probability_map",
     "expected_information_gain",
+    "generate_balanced_mos_counterfactuals",
     "generate_resumable_mos_counterfactuals",
     "information_loss",
     "load_counterfactual_dataset",

@@ -16,8 +16,8 @@ def test_task_performance_network_predicts_all_allocations_and_backpropagates():
     )
 
     assert prediction["success_logits"].shape == (4, 12)
-    assert prediction["task_cost"].shape == (4, 12)
-    assert torch.all(prediction["task_cost"] >= 0)
+    assert prediction["relative_cost"].shape == (4, 12)
+    assert torch.all(prediction["relative_cost"] >= 0)
 
     loss = task_performance_loss(
         prediction,

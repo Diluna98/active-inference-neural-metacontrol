@@ -20,9 +20,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--patience", type=int, default=25)
     parser.add_argument("--success-weight", type=float, default=1.0)
-    parser.add_argument("--task-cost-weight", type=float, default=1.0)
+    parser.add_argument("--relative-cost-weight", type=float, default=1.0)
+    parser.add_argument("--ranking-weight", type=float, default=1.0)
+    parser.add_argument("--ranking-temperature", type=float, default=5.0)
     parser.add_argument("--success-threshold", type=float, default=0.5)
     parser.add_argument("--compute-budget-ms", type=float)
+    parser.add_argument(
+        "--timing-profile",
+        type=Path,
+        help="controlled timing-profile JSON used for deadline filtering and checkpoint metadata",
+    )
     parser.add_argument("--validation-fraction", type=float, default=0.15)
     parser.add_argument("--test-fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=0)
@@ -42,6 +49,7 @@ def main() -> None:
     report = train_task_model(
         split,
         output_dir=args.output_dir,
+        timing_profile=args.timing_profile,
         config=TrainingConfig(
             epochs=args.epochs,
             batch_size=args.batch_size,
@@ -49,7 +57,9 @@ def main() -> None:
             weight_decay=args.weight_decay,
             patience=args.patience,
             success_weight=args.success_weight,
-            task_cost_weight=args.task_cost_weight,
+            relative_cost_weight=args.relative_cost_weight,
+            ranking_weight=args.ranking_weight,
+            ranking_temperature=args.ranking_temperature,
             success_threshold=args.success_threshold,
             compute_budget_ms=args.compute_budget_ms,
             seed=args.seed,

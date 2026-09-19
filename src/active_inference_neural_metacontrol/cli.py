@@ -5,7 +5,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .generation import GenerationConfig, generate_resumable_mos_counterfactuals
+from .generation import (
+    GenerationConfig,
+    generate_balanced_mos_counterfactuals,
+    generate_resumable_mos_counterfactuals,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,6 +25,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--policy-workers", type=int, default=1)
     parser.add_argument("--instance-workers", type=int, default=1)
     parser.add_argument(
+        "--balanced-sources",
+        action="store_true",
+        help="assign the 12 source (gamma, T) allocations round-robin across instances",
+    )
+    parser.add_argument(
         "--resume",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -32,7 +41,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    dataset = generate_resumable_mos_counterfactuals(
+    generator = (
+        generate_balanced_mos_counterfactuals
+        if args.balanced_sources
+        else generate_resumable_mos_counterfactuals
+    )
+    dataset = generator(
         instance_seeds=args.instance_seeds,
         output_dir=args.output_dir,
         config=GenerationConfig(

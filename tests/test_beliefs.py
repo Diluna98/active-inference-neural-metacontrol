@@ -44,3 +44,4 @@ def test_information_loss_detects_fine_to_coarse_compression():
     posterior[0] = 1.0
 
     assert information_loss(posterior, 20, 2) > 0.5
+    assert 0.0 <= information_loss(posterior, 20, 2) <= 1.0

@@ -8,6 +8,7 @@ from .beliefs import (
     project_canonical,
     remap_posterior,
 )
+from .closed_loop import ClosedLoopConfig, NeuralMetaController, evaluate_closed_loop
 from .costs import ComputeProfile, ProfiledComputeCostModel, SwitchingCostMatrix
 from .datasets import (
     CounterfactualArrays,
@@ -35,11 +36,13 @@ __all__ = [
     "RESOLUTIONS",
     "Allocation",
     "AllocationDecision",
+    "ClosedLoopConfig",
     "ComputeProfile",
     "CounterfactualArrays",
     "DatasetSplit",
     "GenerationConfig",
     "MOSFeatureBatch",
+    "NeuralMetaController",
     "ProfiledComputeCostModel",
     "SelectionConstraints",
     "SpatialFeatures",
@@ -50,6 +53,7 @@ __all__ = [
     "canonicalize_posterior",
     "categorical_fisher_map",
     "detection_probability_map",
+    "evaluate_closed_loop",
     "expected_information_gain",
     "generate_balanced_mos_counterfactuals",
     "generate_resumable_mos_counterfactuals",

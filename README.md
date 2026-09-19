@@ -281,6 +281,45 @@ instances distort latency. Its JSON output reports median and p95 inference
 time for every candidate and median/p95 switching time for every observed
 source-to-target pair.
 
+## Closed-loop evaluation
+
+Matched-state labels are useful for training, but they do not establish that an
+adaptive controller works when its choices alter later beliefs. Run the
+closed-loop benchmark on held-out MOS seeds:
+
+```powershell
+active-inference-evaluate-closed-loop `
+  --checkpoint results/mos_balanced_200_model_seed2/best_model.pt `
+  --instance-seeds (3000..3029) `
+  --initial-resolution 5 `
+  --initial-depth 2 `
+  --compute-budget-ms 100 `
+  --max-steps 50 `
+  --instance-workers 4 `
+  --output-dir results/mos_closed_loop_100ms
+```
+
+At every decision, the current task agent performs state and policy inference
+and chooses the physical action. The neural controller then selects the
+allocation for the next decision from the predicted next belief. After the
+observation arrives, the posterior is transferred into the selected
+representation, making that allocation the source for the following step.
+Staying at the current allocation carries the existing agent forward with no
+switch cost.
+
+By default, the same instance and common random sensor sequence are also run
+through all 12 fixed allocations. Evaluation is resumable per instance and
+safe against configuration or checkpoint changes. Use `--adaptive-only` for a
+quick controller smoke test. Keep `--policy-workers 1` when using multiple
+instance workers.
+
+The output contains:
+
+- `episodes.csv`: task, computation, and switching outcomes for every controller;
+- `adaptive_trajectory.csv`: every neural allocation decision and realized timing;
+- `summary.json`: controller aggregates plus paired bootstrap confidence intervals; and
+- `shards/`: resumable per-instance results.
+
 ## Current status
 
 The repository currently implements:

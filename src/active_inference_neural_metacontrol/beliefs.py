@@ -96,4 +96,6 @@ def information_loss(
         return float(np.sum(left[positive] * np.log(left[positive] / right[positive])))
 
     js = 0.5 * kl(original, midpoint) + 0.5 * kl(reconstructed, midpoint)
-    return js / np.log(2.0)
+    # Jensen-Shannon divergence is theoretically bounded by log(2), but
+    # concentrated beliefs can exceed that bound by machine roundoff.
+    return float(np.clip(js / np.log(2.0), 0.0, 1.0))

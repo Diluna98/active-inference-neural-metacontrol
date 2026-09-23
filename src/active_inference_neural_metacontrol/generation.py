@@ -3,18 +3,39 @@
 from __future__ import annotations
 
 import json
+import platform
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, replace
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from .allocations import ALLOCATIONS, Allocation
 from .counterfactuals import (
+    ACCUMULATED_LABEL_SCHEMA,
+    ONE_STEP_LABEL_SCHEMA,
     CounterfactualDataset,
     concatenate_counterfactual_datasets,
     generate_mos_counterfactuals,
     load_generated_counterfactuals,
     save_counterfactual_dataset,
 )
+
+
+def _software_manifest() -> dict[str, str]:
+    packages = (
+        "active-inference-neural-metacontrol",
+        "active-inference-navigation-agent",
+        "pyaif-toolkit",
+        "numpy",
+        "torch",
+    )
+    result = {"python": platform.python_version()}
+    for package in packages:
+        try:
+            result[package] = version(package)
+        except PackageNotFoundError:
+            result[package] = "not-installed"
+    return result
 
 
 @dataclass(frozen=True)
@@ -25,6 +46,10 @@ class GenerationConfig:
     branch_stride: int = 1
     message_passing_iterations: int = 10
     policy_workers: int = 1
+    rollout_horizon: int = 1
+    rollout_discount: float = 1.0
+    collect_task_outcomes: bool = False
+    collect_research_archive: bool = False
     allocations: tuple[tuple[int, int], ...] = tuple(
         (item.resolution, item.depth) for item in ALLOCATIONS
     )
@@ -35,6 +60,10 @@ class GenerationConfig:
             raise ValueError("max_steps must be at least 2 and branch_stride must be positive")
         if self.message_passing_iterations < 1 or self.policy_workers < 1:
             raise ValueError("inference worker and iteration counts must be positive")
+        if self.rollout_horizon < 1:
+            raise ValueError("rollout_horizon must be positive")
+        if not 0 < self.rollout_discount <= 1:
+            raise ValueError("rollout_discount must lie in (0, 1]")
         parsed = tuple(Allocation(*values) for values in self.allocations)
         if not parsed or len(set(parsed)) != len(parsed):
             raise ValueError("allocations must be nonempty and unique")
@@ -48,7 +77,15 @@ class GenerationConfig:
 
 def _marker_payload(instance_seed: int, config: GenerationConfig) -> dict:
     configuration = json.loads(json.dumps(asdict(config)))
-    return {"instance_seed": int(instance_seed), "configuration": configuration}
+    return {
+        "instance_seed": int(instance_seed),
+        "label_schema": (
+            ONE_STEP_LABEL_SCHEMA
+            if config.rollout_horizon == 1
+            else ACCUMULATED_LABEL_SCHEMA
+        ),
+        "configuration": configuration,
+    }
 
 
 def _is_complete(shard_dir: Path, instance_seed: int, config: GenerationConfig) -> bool:
@@ -77,6 +114,10 @@ def _generate_shard(
         message_passing_iterations=config.message_passing_iterations,
         policy_workers=config.policy_workers,
         allocations=config.allocation_objects,
+        rollout_horizon=config.rollout_horizon,
+        rollout_discount=config.rollout_discount,
+        collect_task_outcomes=config.collect_task_outcomes,
+        collect_research_archive=config.collect_research_archive,
     )
     save_counterfactual_dataset(dataset, shard_dir)
     temporary_marker = shard_dir / "complete.json.tmp"
@@ -160,6 +201,7 @@ def _generate_schedule(
             for seed, config in schedule
         ],
         "configuration": asdict(schedule[0][1]),
+        "software": _software_manifest(),
         "contexts": len(combined.context_ids),
         "branches": len(combined.branches),
     }

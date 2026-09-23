@@ -43,7 +43,7 @@ def test_mos_feature_adapter_builds_canonical_channels():
     )
 
     assert features.spatial.tensor.shape == (6, 20, 20)
-    assert features.context.shape == (17,)
+    assert features.context.shape == (16,)
     assert np.isclose(features.spatial.tensor[0].sum(), 1.0)
     assert np.isclose(features.spatial.tensor[1].sum(), 1.0)
     assert np.isclose(features.spatial.tensor[2].sum(), 1.0)

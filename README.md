@@ -26,7 +26,7 @@ policy confidence and current allocation
                     v
        small CNN/MLP task model
                     |
-       success probability + relative task regret
+       normalized selected-policy G
 
 candidate allocation + measured machine profile
                     |
@@ -35,17 +35,17 @@ candidate allocation + measured machine profile
                     |
               predicted latency
 
-task predictions + compute deadline
-+ transition switching time + information loss
+predicted G/T + inference + switching/T
++ deadline survival + JS loss in nats
                     |
                     v
-       constrained allocation selector
+          joint-objective selector
 ```
 
 The task model never receives CPU load merely to learn a mixed task/resource
-score. It predicts task consequences. A separately calibrated compute model
-predicts latency, while switching time and resolution-induced information loss
-remain explicit and auditable.
+score. It predicts the local policy score produced at the next inference. A
+separately calibrated compute model predicts latency, while switching time and
+resolution-induced information loss remain explicit and auditable.
 
 ## Allocation space
 
@@ -77,8 +77,7 @@ recover missing spatial information.
 
 The nonspatial context contains the selected physical action, one-hot current
 `gamma` and `T`, found-object flags, normalized native belief entropy, policy
-entropy, the best-policy probability margin, and the best-versus-second-best
-expected-free-energy gap.
+entropy, and the best-policy probability margin.
 
 For a static target, the ordinary transition prediction may make the predicted
 target posterior identical to the current posterior. This is intentionally
@@ -95,19 +94,38 @@ where the next sensor configuration would be locally sensitive to target
 position. Maps can be precomputed once per environment and retrieved by robot
 position at runtime.
 
-## Constrained selection
+## Joint meta-objective
 
-The selector does not add quantities with incompatible units. It first requires:
+The controller selects a resolution-depth pair by maximizing
 
 ```text
-predicted success >= reliability threshold
-steady inference + switching time <= compute deadline
-resolution-switch information loss <= information-loss limit
+predicted task value
+  - compute weight * ICRA-style latency-preference cost in nats
+  - switching weight * indicator(allocation changed)
+  - information-loss weight * Jensen-Shannon information loss in nats
 ```
 
-It then chooses the feasible allocation with the lowest predicted task cost. If
-none is feasible, it selects the highest predicted-success allocation available
-under the deadline.
+PyAIF's convention places `+ gamma * G` in the policy softmax, so larger task
+values are preferred. The task planner remains receding-horizon and repeats
+inference at every physical step. Every allocation change receives the same
+literal penalty, independently of its measured construction time. As in the
+ICRA controller, latency preference has a linear cost over the full scale and
+an additional quadratic cost above a configurable comfort point:
+
+```text
+C_compute(c) = w_linear * c / deadline
+             + w_excess * max((c - comfort) / (deadline - comfort), 0)^2
+```
+
+This is the negative unnormalised log preference; normalising `exp(-C_compute)`
+on a shared latency grid only adds the same constant to every candidate. The
+default comfort point is 75% of `--deadline-median-ms`, and the scale can be
+controlled independently with `--compute-preference-comfort-ms` and
+`--compute-preference-deadline-ms`. Log-normal deadline survival and its
+surprisal are still reported as diagnostics, but they no longer enter the
+objective. There are no hard feasibility constraints, and neural
+metacontroller latency is reported but excluded because it is already incurred
+and is identical across candidate allocations.
 
 ## Installation
 
@@ -154,7 +172,6 @@ active-inference-mos-counterfactuals `
   --balanced-sources `
   --max-steps 50 `
   --instance-workers 4 `
-  --torch-threads 1 `
   --output-dir results/mos_balanced_200
 ```
 
@@ -170,13 +187,31 @@ For each reference action at step `t`, the generator:
 2. gives every candidate the same executed action and observation at `t + 1`;
 3. times state inference, policy evaluation, and action selection for every
    `(gamma, T)` candidate;
-4. executes each distinct candidate physical action once from the matched state;
-5. hands control back to a clone of the reference controller; and
-6. records success and remaining task cost for every allocation.
+4. reads the selected policy's raw `G`, risk, ambiguity, and parameter-information
+   gain from PyAIF's policy-inference decomposition;
+5. divides the resulting selected-policy `G` by planning depth `T`; and
+6. by default, stores that one-step value as the training target.
 
-Candidates that select the same physical action share the same task outcome.
-This avoids repeating identical environment rollouts while preserving separate
-inference-time measurements. Agent construction, posterior remapping, and other
+For MOS, the normalized target is
+
+```text
+(risk + ambiguity - information_gain) / T
+```
+
+PyAIF's discrete `ambiguity` diagnostic is the positive state-observation mutual
+information term `H[Q(o)] - E[H[P(o|s)]]`; parameter-information gain is normally
+zero in the fixed-model MOS benchmark. No `log(gamma^2)` division is applied:
+the pilot showed that native ambiguity per step was already similar across
+resolutions and state-space division artificially favoured coarse models.
+
+Add `--rollout-horizon 5` for the accumulated target. Each candidate then
+controls its own copied agent and environment for up to five physical steps.
+The stored target is the discounted mean of its successive `G/T` values (set
+`--rollout-discount`, default 1.0). This is schema v5; the default one-step
+dataset remains schema v4. The immediate `G/T`, rollout actions, success,
+steps, and realized task cost remain in `branches.csv` for auditing. No future
+reference-controller outcome or failure penalty is attributed to the candidate.
+Agent construction, posterior remapping, and other
 switch overhead are excluded from `compute_ms` and separately recorded in
 `switch_ms` for the explicit switching-cost model. The no-change diagonal is
 zero: rebuilding an identical agent is needed only for counterfactual isolation,
@@ -186,7 +221,7 @@ The output directory contains:
 
 - `training_data.npz`: tensors and 12-way labels used for training;
 - `contexts.csv`: feature/label timing and state provenance;
-- `branches.csv`: one record per distinct physical-action intervention;
+- `branches.csv`: one auditable policy-diagnostic record per candidate allocation;
 - `reference_trajectory.csv`: the trajectory that defined matched states; and
 - `summary.json`: array shapes, counts, and allocation order.
 
@@ -206,6 +241,104 @@ Keep `--policy-workers 1` during instance-level parallel runs to avoid nested
 process oversubscription. If a run is interrupted, execute the identical command
 again; completed instances will print `[reuse]` and will not be recomputed.
 
+Before a long research-archive run, generate and audit a 100-instance pilot.
+These seeds do not overlap with the original 8200--8399 archive. Balanced
+sources vary the controller that creates the belief history while every saved
+context still evaluates all 12 candidate allocations:
+
+```powershell
+cd "C:\path\to\active-inference-neural-metacontrol"
+& ".\.venv\Scripts\python.exe" -m active_inference_neural_metacontrol.cli `
+  --instance-seeds (10000..10099) `
+  --balanced-sources `
+  --max-steps 50 `
+  --branch-stride 1 `
+  --message-passing-iterations 10 `
+  --policy-workers 1 `
+  --instance-workers 4 `
+  --collect-task-outcomes `
+  --collect-research-archive `
+  --output-dir results/mos_research_pilot_100
+```
+
+Derive the per-future-step policy values and audit whether the pilot contains
+configuration-insensitive, resolution-only, depth-only, and joint-critical
+contexts:
+
+```powershell
+& ".\.venv\Scripts\python.exe" scripts/derive_step_g_dataset.py `
+  --source results/mos_research_pilot_100 `
+  --output results/mos_research_pilot_100_step_g
+
+& ".\.venv\Scripts\python.exe" scripts/audit_configuration_coverage.py `
+  --dataset-dir results/mos_research_pilot_100_step_g `
+  --output-dir results/mos_research_pilot_100_coverage `
+  --margin-nats 0.001
+```
+
+The audit calls a dimension critical only when its task-score improvement
+exceeds the declared margin and changes the first physical action. It reports
+score-only differences separately, counts the number of distinct instances
+supporting each regime, and compares eventual outcomes when those labels are
+available. Do not start the 2,000-instance archive until the depth-only and
+joint regimes recur across multiple independent instances.
+
+### Visualize a planning-depth disagreement
+
+Plot the posterior, posterior-weighted Fisher-information landscape, selected
+policy paths, and PyAIF value decomposition for a matched context:
+
+```powershell
+python scripts/plot_depth_disagreement.py `
+  --instance-seed 4008 --decision 6 --resolution 5 `
+  --source-resolution 10 --source-depth 3 `
+  --output results/mos_normalized_g_pilot_12/depth_disagreement_seed4008_d6_g5.png
+```
+
+The companion JSON records the complete selected action sequences, paths, raw
+`G`, preference per step, ambiguity per step, and `G/T`. The true target is shown
+only for retrospective validation and is never supplied to either agent.
+
+### Diagnose accumulated policy value
+
+Before replacing the one-step training target, compare it with a
+candidate-controlled multi-step target. Every allocation receives the same
+starting state and sensor quantiles, controls its own five-step receding-horizon
+rollout, and accumulates its selected-policy `G/T`:
+
+```powershell
+active-inference-diagnose-g-rollouts `
+  --instance-seeds (4000..4009) `
+  --max-reference-steps 20 `
+  --branch-stride 5 `
+  --rollout-horizon 5 `
+  --output-dir results/accumulated_g_diagnostic
+```
+
+The diagnostic reports how often the one-step and accumulated-`G/T` oracles
+choose different allocations or first actions, plus their realized success and
+task cost within the common rollout horizon.
+
+Generate a deliberately small schema-v5 pipeline test before committing to a
+large run:
+
+```powershell
+active-inference-mos-counterfactuals `
+  --instance-seeds (5000..5011) `
+  --balanced-sources `
+  --max-steps 6 `
+  --branch-stride 5 `
+  --rollout-horizon 5 `
+  --rollout-discount 1.0 `
+  --message-passing-iterations 3 `
+  --policy-workers 1 `
+  --instance-workers 4 `
+  --output-dir results/mos_accumulated_g_h5_pilot_12
+```
+
+This produces only one context per source allocation and is a software smoke
+test, not a scientifically useful training set.
+
 ## Train the task-performance model
 
 Install the neural extra and train from a generated dataset:
@@ -223,6 +356,11 @@ active-inference-train-metacontroller \
   --seed 0
 ```
 
+For the 12-instance smoke dataset, add `--no-stratify-by-source`, because one
+instance per source is insufficient for source-stratified train/validation/test
+splits. Keep the default stratification for the large dataset, with at least
+three instances per source allocation.
+
 For repeated neural initializations on exactly the same data split, keep
 `--split-seed` fixed while changing `--seed`. This separates model variance
 from train/test-partition variance.
@@ -233,17 +371,14 @@ the training, validation, or test set. The saved split is recorded in both the
 checkpoint and metrics report.
 
 The trainer standardizes nonspatial context using training-set statistics. It
-optimizes binary success prediction, log-scale relative regret
-`J(gamma,T) - min J`, and a listwise ranking loss over the 12 candidates. This
-targets the allocation decision directly instead of requiring the network to
-learn instance-dependent absolute cost offsets. Validation-based early stopping
+optimizes normalized selected-policy `G` regression and a listwise ranking loss
+over the 12 candidates. Validation-based early stopping
 and allocation-level evaluation are applied on all three splits. Test metrics
 include:
 
-- success Brier score and classification accuracy;
-- relative-cost MAE and RMSE;
-- realized success and task cost of the network-selected allocation;
-- regret relative to the matched counterfactual oracle; and
+- normalized-`G` MAE and RMSE;
+- realized normalized `G` of the network-selected allocation;
+- normalized-`G` regret relative to the matched-state oracle; and
 - all 12 fixed-allocation baselines.
 
 Use `--compute-budget-ms` to exclude allocations whose controlled median
@@ -290,14 +425,20 @@ closed-loop benchmark on held-out MOS seeds:
 
 ```powershell
 active-inference-evaluate-closed-loop `
-  --checkpoint results/mos_balanced_200_model_seed2/best_model.pt `
+  --checkpoint results/mos_g_per_t_balanced_400_model_seed0_temp01_profiled/best_model.pt `
   --instance-seeds (3000..3029) `
+  --deadline-median-ms 100 `
+  --deadline-log-sigma 0.5 `
+  --compute-preference-comfort-ms 600 `
+  --compute-preference-deadline-ms 800 `
+  --compute-preference-linear-weight 1 `
+  --compute-preference-excess-weight 2 `
   --initial-resolution 5 `
   --initial-depth 2 `
-  --compute-budget-ms 100 `
+  --hold-allocation-for-depth `
   --max-steps 50 `
   --instance-workers 4 `
-  --output-dir results/mos_closed_loop_100ms
+  --output-dir results/mos_closed_loop_joint
 ```
 
 At every decision, the current task agent performs state and policy inference
@@ -305,8 +446,15 @@ and chooses the physical action. The neural controller then selects the
 allocation for the next decision from the predicted next belief. After the
 observation arrives, the posterior is transferred into the selected
 representation, making that allocation the source for the following step.
+All 12 allocation shells are initialized before the timed control loop. Their
+static likelihoods, transitions, policies, and normalized generative arrays
+are retained, so an online switch transfers only the recurrent posterior,
+previous action, clock, and receding-inference stage. `agent_pool_setup_ms` is
+reported separately; `switch_ms` and `total_compute_ms` contain online work.
 Staying at the current allocation carries the existing agent forward with no
-switch cost.
+switch cost. With `--hold-allocation-for-depth`, a selected `(gamma, T)` is
+used for `T` physical decisions before the metacontroller selects again, which
+matches the switching-cost amortization in the joint objective.
 
 By default, the same instance and common random sensor sequence are also run
 through all 12 fixed allocations. Evaluation is resumable per instance and
@@ -332,10 +480,10 @@ The repository currently implements:
 - Jensen-Shannon information-loss measurement;
 - canonical visibility and categorical Fisher maps;
 - spatial and nonspatial feature assembly;
-- a small optional PyTorch success/relative-regret network with ranking loss;
+- a small optional PyTorch normalized-`G` network with ranking loss;
 - a separate profiled compute-cost model;
 - a transition-specific switching matrix; and
-- constrained allocation selection;
+- joint task-quality, compute, switching, and information-loss selection;
 - a live MOS-to-neural feature adapter; and
 - parallel, resumable matched-state generation for all 12 allocations;
 - balanced source-allocation scheduling and stratified splitting; and

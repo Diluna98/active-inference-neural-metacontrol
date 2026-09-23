@@ -25,6 +25,31 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--policy-workers", type=int, default=1)
     parser.add_argument("--instance-workers", type=int, default=1)
     parser.add_argument(
+        "--rollout-horizon",
+        type=int,
+        default=1,
+        help="candidate-controlled steps used for the training target (default: 1)",
+    )
+    parser.add_argument(
+        "--rollout-discount",
+        type=float,
+        default=1.0,
+        help="discount for accumulated normalized G values (default: 1.0)",
+    )
+    parser.add_argument(
+        "--collect-task-outcomes",
+        action="store_true",
+        help="also label eventual success and remaining task cost after one candidate action",
+    )
+    parser.add_argument(
+        "--collect-research-archive",
+        action="store_true",
+        help=(
+            "preserve full policy distributions, decompositions, candidate beliefs, "
+            "predicted observations, and timing components for offline relabeling"
+        ),
+    )
+    parser.add_argument(
         "--balanced-sources",
         action="store_true",
         help="assign the 12 source (gamma, T) allocations round-robin across instances",
@@ -56,11 +81,19 @@ def main() -> None:
             branch_stride=args.branch_stride,
             message_passing_iterations=args.message_passing_iterations,
             policy_workers=args.policy_workers,
+            rollout_horizon=args.rollout_horizon,
+            rollout_discount=args.rollout_discount,
+            collect_task_outcomes=args.collect_task_outcomes,
+            collect_research_archive=args.collect_research_archive,
         ),
         instance_workers=args.instance_workers,
         resume=args.resume,
     )
     print(
         f"wrote {len(dataset.context_ids)} contexts and {len(dataset.branches)} "
-        f"unique action branches to {args.output_dir}"
+        f"candidate policy diagnostics to {args.output_dir}"
     )
+
+
+if __name__ == "__main__":  # pragma: no cover
+    main()

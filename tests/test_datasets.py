@@ -15,9 +15,12 @@ def synthetic_arrays() -> CounterfactualArrays:
     samples = 12
     return CounterfactualArrays(
         spatial=np.full((samples, 6, 20, 20), 0.1, dtype=np.float32),
-        context=np.arange(samples * 17, dtype=np.float32).reshape(samples, 17),
-        success=np.ones((samples, 12), dtype=np.float32),
-        task_cost=np.arange(samples * 12, dtype=np.float32).reshape(samples, 12) + 1,
+        context=np.arange(samples * 16, dtype=np.float32).reshape(samples, 16),
+        normalized_g=np.arange(samples * 12, dtype=np.float32).reshape(samples, 12) - 5,
+        raw_g=np.ones((samples, 12), dtype=np.float32),
+        risk=np.ones((samples, 12), dtype=np.float32),
+        ambiguity=np.ones((samples, 12), dtype=np.float32),
+        information_gain=np.zeros((samples, 12), dtype=np.float32),
         compute_ms=np.ones((samples, 12), dtype=np.float32),
         switch_ms=np.zeros((samples, 12), dtype=np.float32),
         candidate_actions=np.zeros((samples, 12), dtype=np.int8),
@@ -47,9 +50,12 @@ def test_instance_split_stratifies_every_source_allocation():
     )
     arrays = CounterfactualArrays(
         spatial=np.zeros((samples, 6, 20, 20), dtype=np.float32),
-        context=np.zeros((samples, 17), dtype=np.float32),
-        success=np.ones((samples, 12), dtype=np.float32),
-        task_cost=np.ones((samples, 12), dtype=np.float32),
+        context=np.zeros((samples, 16), dtype=np.float32),
+        normalized_g=np.ones((samples, 12), dtype=np.float32),
+        raw_g=np.ones((samples, 12), dtype=np.float32),
+        risk=np.ones((samples, 12), dtype=np.float32),
+        ambiguity=np.ones((samples, 12), dtype=np.float32),
+        information_gain=np.zeros((samples, 12), dtype=np.float32),
         compute_ms=np.ones((samples, 12), dtype=np.float32),
         switch_ms=np.ones((samples, 12), dtype=np.float32),
         candidate_actions=np.zeros((samples, 12), dtype=np.int8),
@@ -81,8 +87,11 @@ def test_loader_joins_context_metadata_and_checks_allocation_order():
         output / "training_data.npz",
         spatial=arrays.spatial,
         context=arrays.context,
-        success=arrays.success,
-        task_cost=arrays.task_cost,
+        normalized_g=arrays.normalized_g,
+        raw_g=arrays.raw_g,
+        risk=arrays.risk,
+        ambiguity=arrays.ambiguity,
+        information_gain=arrays.information_gain,
         compute_ms=arrays.compute_ms,
         switch_ms=arrays.switch_ms,
         candidate_actions=arrays.candidate_actions,
@@ -116,5 +125,6 @@ def test_loader_joins_context_metadata_and_checks_allocation_order():
     loaded = load_counterfactual_dataset(output)
 
     assert np.array_equal(loaded.instance_seeds, arrays.instance_seeds)
-    assert np.array_equal(loaded.task_cost, arrays.task_cost)
+    assert np.array_equal(loaded.normalized_g, arrays.normalized_g)
+    assert np.array_equal(loaded.raw_g, arrays.raw_g)
     assert np.array_equal(loaded.switch_ms, arrays.switch_ms)

@@ -6,6 +6,12 @@ from active_inference_neural_metacontrol import (
     build_context_vector,
     build_spatial_features,
 )
+from active_inference_neural_metacontrol.features import (
+    FOUR_TERM_ABLATION_FEATURE_SCHEMA,
+    FOUR_TERM_NO_ALLOCATION_FEATURE_SCHEMA,
+    project_decomposed_features,
+    project_feature_schema,
+)
 
 
 def test_spatial_features_have_fixed_six_channel_shape():
@@ -33,8 +39,61 @@ def test_context_vector_contains_action_allocation_found_and_confidence():
         found_flags=np.asarray([0]),
         posterior=np.ones(25),
         policy_posterior=np.asarray([0.1, 0.2, 0.7]),
-        expected_free_energy=np.asarray([2.0, 1.0, 3.0]),
     )
 
-    assert context.shape == (6 + 4 + 3 + 1 + 4,)
+    assert context.shape == (6 + 4 + 3 + 1 + 3,)
     assert np.all(np.isfinite(context))
+
+
+def test_decomposed_projection_removes_requested_inputs():
+    spatial = np.arange(6 * 20 * 20).reshape(6, 20, 20)
+    context = np.arange(16)
+
+    reduced_spatial, reduced_context = project_decomposed_features(spatial, context)
+
+    assert reduced_spatial.shape == (5, 20, 20)
+    assert reduced_context.shape == (14,)
+    assert np.array_equal(reduced_spatial[:, 0, 0], spatial[[0, 1, 2, 3, 5], 0, 0])
+    assert np.array_equal(reduced_context, context[[*range(13), 14]])
+
+
+def test_four_term_ablation_removes_current_posterior_action_and_policy_entropy():
+    spatial = np.arange(6 * 20 * 20).reshape(6, 20, 20)
+    context = np.arange(16)
+
+    reduced_spatial, reduced_context = project_feature_schema(
+        spatial, context, FOUR_TERM_ABLATION_FEATURE_SCHEMA
+    )
+
+    assert np.array_equal(reduced_spatial, spatial[[1, 2, 3, 5]])
+    assert np.array_equal(reduced_context, context[5:13])
+
+
+def test_four_term_no_allocation_ablation_keeps_only_found_context():
+    spatial = np.arange(6 * 20 * 20).reshape(6, 20, 20)
+    context = np.arange(16)
+
+    reduced_spatial, reduced_context = project_feature_schema(
+        spatial, context, FOUR_TERM_NO_ALLOCATION_FEATURE_SCHEMA
+    )
+
+    assert np.array_equal(reduced_spatial, spatial[[1, 2, 3, 5]])
+    assert np.array_equal(reduced_context, context[[12]])
+
+
+def test_predicted_observation_schema_adds_pre_observation_distribution():
+    from active_inference_neural_metacontrol.features import (
+        FOUR_TERM_PREDICTED_OBSERVATION_FEATURE_SCHEMA,
+    )
+
+    spatial = np.zeros((6, 20, 20), dtype=np.float32)
+    spatial[1] = 1.0 / 400.0
+    spatial[4] = 0.25
+    context = np.arange(16, dtype=np.float32)
+
+    reduced_spatial, reduced_context = project_feature_schema(
+        spatial, context, FOUR_TERM_PREDICTED_OBSERVATION_FEATURE_SCHEMA
+    )
+
+    assert np.array_equal(reduced_spatial, spatial[[1, 2, 3, 5]])
+    assert np.allclose(reduced_context, [12.0, 0.75, 0.25])

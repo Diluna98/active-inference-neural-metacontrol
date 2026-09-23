@@ -10,6 +10,19 @@ from .allocations import DEPTHS, RESOLUTIONS, Allocation
 from .beliefs import canonicalize_posterior, normalized_entropy
 from .information import categorical_fisher_map, detection_probability_map
 
+DECOMPOSED_FEATURE_SCHEMA = "mos-decomposed-v1"
+DECOMPOSED_SPATIAL_INDICES = (0, 1, 2, 3, 5)
+DECOMPOSED_CONTEXT_INDICES = (*range(13), 14)
+FOUR_TERM_ABLATION_FEATURE_SCHEMA = "mos-four-term-no-current-action-policy-entropy-v1"
+FOUR_TERM_ABLATION_SPATIAL_INDICES = (1, 2, 3, 5)
+FOUR_TERM_ABLATION_CONTEXT_INDICES = (*range(5, 13),)
+FOUR_TERM_NO_ALLOCATION_FEATURE_SCHEMA = "mos-four-term-predicted-context-only-v1"
+FOUR_TERM_NO_ALLOCATION_SPATIAL_INDICES = FOUR_TERM_ABLATION_SPATIAL_INDICES
+FOUR_TERM_NO_ALLOCATION_CONTEXT_INDICES = (12,)
+FOUR_TERM_PREDICTED_OBSERVATION_FEATURE_SCHEMA = (
+    "mos-four-term-predicted-context-observation-v1"
+)
+
 
 @dataclass(frozen=True)
 class SpatialFeatures:
@@ -88,7 +101,6 @@ def build_context_vector(
     found_flags: np.ndarray,
     posterior: np.ndarray,
     policy_posterior: np.ndarray,
-    expected_free_energy: np.ndarray,
 ) -> np.ndarray:
     """Build nonspatial action, allocation, object, and policy-confidence features."""
 
@@ -100,9 +112,8 @@ def build_context_vector(
     if found.size == 0 or np.any((found < 0) | (found > 1)):
         raise ValueError("found_flags must contain at least one value in [0, 1]")
     policies = np.asarray(policy_posterior, dtype=float).ravel()
-    efe = np.asarray(expected_free_energy, dtype=float).ravel()
-    if policies.size < 1 or policies.size != efe.size:
-        raise ValueError("policy posterior and EFE must have the same nonzero size")
+    if policies.size < 1:
+        raise ValueError("policy posterior must be nonempty")
     if np.any(policies < 0) or not np.all(np.isfinite(policies)) or policies.sum() <= 0:
         raise ValueError("policy posterior must be finite, nonnegative, and normalized")
     policies = policies / policies.sum()
@@ -110,8 +121,6 @@ def build_context_vector(
     probability_margin = float(
         sorted_probabilities[-1] - (sorted_probabilities[-2] if policies.size > 1 else 0.0)
     )
-    sorted_efe = np.sort(efe)
-    efe_gap = float(sorted_efe[1] - sorted_efe[0]) if efe.size > 1 else 0.0
     positive = policies > 0
     policy_entropy = float(-np.sum(policies[positive] * np.log(policies[positive])))
     if policies.size > 1:
@@ -121,7 +130,6 @@ def build_context_vector(
             normalized_entropy(posterior, allocation.resolution),
             policy_entropy,
             probability_margin,
-            efe_gap,
         ],
         dtype=np.float32,
     )
@@ -134,3 +142,75 @@ def build_context_vector(
             confidence,
         )
     )
+
+
+def project_decomposed_features(
+    spatial: np.ndarray,
+    context: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Remove visibility, posterior entropy, and policy-margin inputs.
+
+    Supports both one context and batched dataset arrays. The retained policy
+    entropy is useful evidence about ambiguity in the task-level decision.
+    """
+
+    spatial_values = np.asarray(spatial)
+    context_values = np.asarray(context)
+    if spatial_values.ndim not in {3, 4} or spatial_values.shape[-3] != 6:
+        raise ValueError("spatial must contain the six canonical MOS channels")
+    if context_values.ndim not in {1, 2} or context_values.shape[-1] != 16:
+        raise ValueError("context must contain the sixteen canonical MOS features")
+    return (
+        np.take(spatial_values, DECOMPOSED_SPATIAL_INDICES, axis=-3),
+        np.take(context_values, DECOMPOSED_CONTEXT_INDICES, axis=-1),
+    )
+
+
+def project_feature_schema(
+    spatial: np.ndarray,
+    context: np.ndarray,
+    feature_schema: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Project canonical MOS inputs according to a checkpointed feature schema."""
+
+    if feature_schema == DECOMPOSED_FEATURE_SCHEMA:
+        return project_decomposed_features(spatial, context)
+    if feature_schema not in {
+        FOUR_TERM_ABLATION_FEATURE_SCHEMA,
+        FOUR_TERM_NO_ALLOCATION_FEATURE_SCHEMA,
+        FOUR_TERM_PREDICTED_OBSERVATION_FEATURE_SCHEMA,
+    }:
+        raise ValueError(f"unsupported feature schema: {feature_schema}")
+    spatial_values = np.asarray(spatial)
+    context_values = np.asarray(context)
+    if spatial_values.ndim not in {3, 4} or spatial_values.shape[-3] != 6:
+        raise ValueError("spatial must contain the six canonical MOS channels")
+    if context_values.ndim not in {1, 2} or context_values.shape[-1] != 16:
+        raise ValueError("context must contain the sixteen canonical MOS features")
+    if feature_schema == FOUR_TERM_ABLATION_FEATURE_SCHEMA:
+        spatial_indices = FOUR_TERM_ABLATION_SPATIAL_INDICES
+        context_indices = FOUR_TERM_ABLATION_CONTEXT_INDICES
+    else:
+        spatial_indices = FOUR_TERM_NO_ALLOCATION_SPATIAL_INDICES
+        context_indices = FOUR_TERM_NO_ALLOCATION_CONTEXT_INDICES
+    projected_spatial = np.take(spatial_values, spatial_indices, axis=-3)
+    projected_context = np.take(context_values, context_indices, axis=-1)
+    if feature_schema == FOUR_TERM_PREDICTED_OBSERVATION_FEATURE_SCHEMA:
+        # Both arrays are available before o_(t+1): channel 1 is Q(s_(t+1)|t)
+        # and channel 4 is P(detection|s_(t+1), R_(t+1)).  Their contraction
+        # is the binary predicted-observation distribution, not the realized
+        # future observation.
+        predicted_posterior = np.take(spatial_values, 1, axis=-3)
+        detection_probability = np.take(spatial_values, 4, axis=-3)
+        predicted_detection = np.sum(
+            predicted_posterior * detection_probability,
+            axis=(-2, -1),
+        )
+        predicted_detection = np.clip(predicted_detection, 0.0, 1.0)
+        predicted_observation = np.stack(
+            (1.0 - predicted_detection, predicted_detection), axis=-1
+        ).astype(projected_context.dtype, copy=False)
+        projected_context = np.concatenate(
+            (projected_context, predicted_observation), axis=-1
+        )
+    return projected_spatial, projected_context

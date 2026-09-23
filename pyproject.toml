@@ -30,8 +30,18 @@ dependencies = ["numpy>=1.24"]
 [project.scripts]
 active-inference-mos-counterfactuals = "active_inference_neural_metacontrol.cli:main"
 active-inference-train-metacontroller = "active_inference_neural_metacontrol.train_cli:main"
+active-inference-train-multiobjective = "active_inference_neural_metacontrol.multiobjective_train_cli:main"
+active-inference-train-task-utility = "active_inference_neural_metacontrol.task_utility_train_cli:main"
+active-inference-train-decomposed = "active_inference_neural_metacontrol.decomposed_train_cli:main"
+active-inference-train-inference-value = "active_inference_neural_metacontrol.inference_value_train_cli:main"
+active-inference-train-four-term-value = "active_inference_neural_metacontrol.four_term_train_cli:main"
 active-inference-profile-metacontrol = "active_inference_neural_metacontrol.profile_cli:main"
 active-inference-evaluate-closed-loop = "active_inference_neural_metacontrol.closed_loop_cli:main"
+active-inference-diagnose-g-rollouts = "active_inference_neural_metacontrol.rollout_diagnostic_cli:main"
+active-inference-evaluate-g-oracles = "active_inference_neural_metacontrol.rollout_oracle_cli:main"
+active-inference-evaluate-online-value-oracle = "active_inference_neural_metacontrol.online_value_oracle_cli:main"
+active-inference-diagnose-resolution-vfe = "active_inference_neural_metacontrol.resolution_vfe_diagnostic_cli:main"
+active-inference-diagnose-neural-ranking = "active_inference_neural_metacontrol.ranking_diagnostic_cli:main"
 
 [project.optional-dependencies]
 neural = ["torch>=2.2"]

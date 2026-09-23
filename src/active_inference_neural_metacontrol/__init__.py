@@ -9,7 +9,13 @@ from .beliefs import (
     remap_posterior,
 )
 from .closed_loop import ClosedLoopConfig, NeuralMetaController, evaluate_closed_loop
-from .costs import ComputeProfile, ProfiledComputeCostModel, SwitchingCostMatrix
+from .costs import (
+    ComputeProfile,
+    LatencyScalePreference,
+    LogNormalDeadlinePreference,
+    ProfiledComputeCostModel,
+    SwitchingCostMatrix,
+)
 from .datasets import (
     CounterfactualArrays,
     DatasetSplit,
@@ -28,7 +34,13 @@ from .information import (
     expected_information_gain,
 )
 from .mos_adapter import MOSFeatureBatch, build_mos_features
-from .selector import AllocationDecision, SelectionConstraints, select_allocation
+from .rollout_diagnostic import (
+    GOracleConfig,
+    diagnose_accumulated_g,
+    evaluate_g_oracles,
+    run_g_oracle_episode,
+)
+from .selector import AllocationDecision, select_allocation
 
 __all__ = [
     "ALLOCATIONS",
@@ -40,11 +52,13 @@ __all__ = [
     "ComputeProfile",
     "CounterfactualArrays",
     "DatasetSplit",
+    "GOracleConfig",
     "GenerationConfig",
+    "LatencyScalePreference",
+    "LogNormalDeadlinePreference",
     "MOSFeatureBatch",
     "NeuralMetaController",
     "ProfiledComputeCostModel",
-    "SelectionConstraints",
     "SpatialFeatures",
     "SwitchingCostMatrix",
     "build_context_vector",
@@ -53,7 +67,9 @@ __all__ = [
     "canonicalize_posterior",
     "categorical_fisher_map",
     "detection_probability_map",
+    "diagnose_accumulated_g",
     "evaluate_closed_loop",
+    "evaluate_g_oracles",
     "expected_information_gain",
     "generate_balanced_mos_counterfactuals",
     "generate_resumable_mos_counterfactuals",
@@ -62,6 +78,7 @@ __all__ = [
     "normalized_entropy",
     "project_canonical",
     "remap_posterior",
+    "run_g_oracle_episode",
     "select_allocation",
     "split_by_instance",
 ]

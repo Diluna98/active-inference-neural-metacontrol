@@ -1,0 +1,58 @@
+{
+  "schema": "mos-meta-q-counterfactual-transitions-v1",
+  "feature_schema": "mos-meta-q-full-prediction-realized-observation-v1",
+  "transitions": 41689,
+  "candidate_branches": 500268,
+  "instances": 1180,
+  "terminal_branches": 15121,
+  "allocations": [
+    {
+      "resolution": 2,
+      "depth": 1
+    },
+    {
+      "resolution": 2,
+      "depth": 2
+    },
+    {
+      "resolution": 2,
+      "depth": 3
+    },
+    {
+      "resolution": 5,
+      "depth": 1
+    },
+    {
+      "resolution": 5,
+      "depth": 2
+    },
+    {
+      "resolution": 5,
+      "depth": 3
+    },
+    {
+      "resolution": 10,
+      "depth": 1
+    },
+    {
+      "resolution": 10,
+      "depth": 2
+    },
+    {
+      "resolution": 10,
+      "depth": 3
+    },
+    {
+      "resolution": 20,
+      "depth": 1
+    },
+    {
+      "resolution": 20,
+      "depth": 2
+    },
+    {
+      "resolution": 20,
+      "depth": 3
+    }
+  ]
+}

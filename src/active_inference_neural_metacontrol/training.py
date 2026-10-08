@@ -34,11 +34,9 @@ class TrainingConfig:
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
     patience: int = 25
-    success_weight: float = 1.0
-    relative_cost_weight: float = 1.0
+    normalized_g_weight: float = 1.0
     ranking_weight: float = 1.0
     ranking_temperature: float = 5.0
-    success_threshold: float = 0.5
     compute_budget_ms: float | None = None
     seed: int = 0
     device: str = "auto"
@@ -48,14 +46,12 @@ class TrainingConfig:
             raise ValueError("epochs, batch_size, and patience must be positive")
         if self.learning_rate <= 0 or self.weight_decay < 0:
             raise ValueError("learning_rate must be positive and weight_decay nonnegative")
-        if self.success_weight < 0 or self.relative_cost_weight < 0 or self.ranking_weight < 0:
+        if self.normalized_g_weight < 0 or self.ranking_weight < 0:
             raise ValueError("loss weights must be nonnegative")
-        if self.success_weight + self.relative_cost_weight + self.ranking_weight == 0:
+        if self.normalized_g_weight + self.ranking_weight == 0:
             raise ValueError("at least one loss weight must be positive")
         if self.ranking_temperature <= 0:
             raise ValueError("ranking_temperature must be positive")
-        if not 0 <= self.success_threshold <= 1:
-            raise ValueError("success_threshold must lie in [0, 1]")
         if self.compute_budget_ms is not None and self.compute_budget_ms <= 0:
             raise ValueError("compute_budget_ms must be positive")
 
@@ -70,8 +66,7 @@ class _TorchDataset(Dataset):
         self.spatial = torch.from_numpy(arrays.spatial)
         normalized = (arrays.context - context_mean) / context_scale
         self.context = torch.from_numpy(normalized.astype(np.float32))
-        self.success = torch.from_numpy(arrays.success)
-        self.task_cost = torch.from_numpy(arrays.task_cost)
+        self.normalized_g = torch.from_numpy(arrays.normalized_g)
 
     def __len__(self) -> int:
         return len(self.spatial)
@@ -80,8 +75,7 @@ class _TorchDataset(Dataset):
         return (
             self.spatial[index],
             self.context[index],
-            self.success[index],
-            self.task_cost[index],
+            self.normalized_g[index],
         )
 
 
@@ -103,24 +97,17 @@ def _resolve_device(requested: str) -> Any:
 
 def _loss_components(
     prediction: dict[str, Any],
-    success: Any,
-    task_cost: Any,
+    normalized_g: Any,
     *,
     ranking_temperature: float,
-) -> tuple[Any, Any, Any]:
-    success_loss = functional.binary_cross_entropy_with_logits(
-        prediction["success_logits"], success
-    )
-    relative_target = task_cost - task_cost.min(dim=1, keepdim=True).values
-    relative_loss = functional.smooth_l1_loss(
-        torch.log1p(prediction["relative_cost"]), torch.log1p(relative_target)
-    )
-    target_probability = functional.softmax(-relative_target / ranking_temperature, dim=1)
+) -> tuple[Any, Any]:
+    normalized_g_loss = functional.smooth_l1_loss(prediction["normalized_g"], normalized_g)
+    target_probability = functional.softmax(normalized_g / ranking_temperature, dim=1)
     predicted_log_probability = functional.log_softmax(
-        -prediction["relative_cost"] / ranking_temperature, dim=1
+        prediction["normalized_g"] / ranking_temperature, dim=1
     )
     ranking_loss = -(target_probability * predicted_log_probability).sum(dim=1).mean()
-    return success_loss, relative_loss, ranking_loss
+    return normalized_g_loss, ranking_loss
 
 
 def _run_epoch(
@@ -133,26 +120,23 @@ def _run_epoch(
 ) -> dict[str, float]:
     training = optimizer is not None
     model.train(training)
-    totals = np.zeros(4, dtype=float)
+    totals = np.zeros(3, dtype=float)
     samples = 0
-    for spatial, context, success, task_cost in loader:
+    for spatial, context, normalized_g in loader:
         spatial = spatial.to(device)
         context = context.to(device)
-        success = success.to(device)
-        task_cost = task_cost.to(device)
+        normalized_g = normalized_g.to(device)
         if training:
             optimizer.zero_grad(set_to_none=True)
         with torch.set_grad_enabled(training):
             prediction = model(spatial, context)
-            success_loss, relative_loss, ranking_loss = _loss_components(
+            normalized_g_loss, ranking_loss = _loss_components(
                 prediction,
-                success,
-                task_cost,
+                normalized_g,
                 ranking_temperature=config.ranking_temperature,
             )
             loss = (
-                config.success_weight * success_loss
-                + config.relative_cost_weight * relative_loss
+                config.normalized_g_weight * normalized_g_loss
                 + config.ranking_weight * ranking_loss
             )
             if training:
@@ -160,15 +144,14 @@ def _run_epoch(
                 optimizer.step()
         count = spatial.shape[0]
         totals += count * np.asarray(
-            [loss.item(), success_loss.item(), relative_loss.item(), ranking_loss.item()],
+            [loss.item(), normalized_g_loss.item(), ranking_loss.item()],
             dtype=float,
         )
         samples += count
     return {
         "loss": float(totals[0] / samples),
-        "success_loss": float(totals[1] / samples),
-        "relative_cost_loss": float(totals[2] / samples),
-        "ranking_loss": float(totals[3] / samples),
+        "normalized_g_loss": float(totals[1] / samples),
+        "ranking_loss": float(totals[2] / samples),
     }
 
 
@@ -180,89 +163,68 @@ def _predict(
     context_scale: np.ndarray,
     device: Any,
     batch_size: int,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> np.ndarray:
     loader = DataLoader(
         _TorchDataset(arrays, context_mean, context_scale),
         batch_size=batch_size,
         shuffle=False,
     )
-    success_values = []
-    cost_values = []
+    normalized_g_values = []
     model.eval()
     with torch.no_grad():
-        for spatial, context, _, _ in loader:
+        for spatial, context, _ in loader:
             prediction = model(spatial.to(device), context.to(device))
-            success_values.append(torch.sigmoid(prediction["success_logits"]).cpu().numpy())
-            cost_values.append(prediction["relative_cost"].cpu().numpy())
-    return np.concatenate(success_values), np.concatenate(cost_values)
+            normalized_g_values.append(prediction["normalized_g"].cpu().numpy())
+    return np.concatenate(normalized_g_values)
 
 
 def evaluate_predictions(
     arrays: CounterfactualArrays,
     *,
-    success_probability: np.ndarray,
-    relative_cost_prediction: np.ndarray,
+    normalized_g_prediction: np.ndarray,
     compute_profile_ms: np.ndarray,
-    success_threshold: float,
     compute_budget_ms: float | None,
 ) -> dict[str, Any]:
-    """Measure predictive accuracy and realized allocation-selection quality."""
+    """Measure normalized-G prediction and allocation-selection quality."""
 
-    success_probability = np.asarray(success_probability, dtype=float)
-    relative_cost_prediction = np.asarray(relative_cost_prediction, dtype=float)
-    expected_shape = arrays.success.shape
-    if (
-        success_probability.shape != expected_shape
-        or relative_cost_prediction.shape != expected_shape
-    ):
+    normalized_g_prediction = np.asarray(normalized_g_prediction, dtype=float)
+    expected_shape = arrays.normalized_g.shape
+    if normalized_g_prediction.shape != expected_shape:
         raise ValueError(f"predictions must have shape {expected_shape}")
-    relative_target = arrays.task_cost - arrays.task_cost.min(axis=1, keepdims=True)
     eligible_compute = np.ones(len(ALLOCATIONS), dtype=bool)
     if compute_budget_ms is not None:
         eligible_compute = np.asarray(compute_profile_ms) <= compute_budget_ms
     selected = []
-    for row in range(len(arrays.success)):
-        feasible = np.flatnonzero(
-            (success_probability[row] >= success_threshold) & eligible_compute
-        )
-        if feasible.size:
-            index = int(feasible[np.argmin(relative_cost_prediction[row, feasible])])
-        else:
-            candidates = np.flatnonzero(eligible_compute)
-            if not candidates.size:
-                candidates = np.arange(len(ALLOCATIONS))
-            best_success = success_probability[row, candidates].max()
-            ties = candidates[np.isclose(success_probability[row, candidates], best_success)]
-            index = int(ties[np.argmin(relative_cost_prediction[row, ties])])
+    for row in range(len(arrays.normalized_g)):
+        candidates = np.flatnonzero(eligible_compute)
+        if not candidates.size:
+            candidates = np.arange(len(ALLOCATIONS))
+        index = int(candidates[np.argmax(normalized_g_prediction[row, candidates])])
         selected.append(index)
     selected = np.asarray(selected, dtype=int)
     rows = np.arange(len(selected))
-    realized_cost = arrays.task_cost[rows, selected]
-    realized_success = arrays.success[rows, selected]
-    oracle_cost = arrays.task_cost.min(axis=1)
+    realized_g = arrays.normalized_g[rows, selected]
+    oracle_g = arrays.normalized_g.max(axis=1)
     fixed = []
     for index, allocation in enumerate(ALLOCATIONS):
         fixed.append(
             {
                 "resolution": allocation.resolution,
                 "depth": allocation.depth,
-                "mean_task_cost": float(arrays.task_cost[:, index].mean()),
-                "success_rate": float(arrays.success[:, index].mean()),
+                "mean_normalized_g": float(arrays.normalized_g[:, index].mean()),
+                "mean_raw_g": float(arrays.raw_g[:, index].mean()),
                 "median_compute_ms": float(compute_profile_ms[index]),
             }
         )
     return {
         "samples": len(selected),
-        "success_brier": float(np.mean((success_probability - arrays.success) ** 2)),
-        "success_accuracy": float(np.mean((success_probability >= 0.5) == (arrays.success >= 0.5))),
-        "relative_cost_mae": float(np.mean(np.abs(relative_cost_prediction - relative_target))),
-        "relative_cost_rmse": float(
-            np.sqrt(np.mean((relative_cost_prediction - relative_target) ** 2))
+        "normalized_g_mae": float(np.mean(np.abs(normalized_g_prediction - arrays.normalized_g))),
+        "normalized_g_rmse": float(
+            np.sqrt(np.mean((normalized_g_prediction - arrays.normalized_g) ** 2))
         ),
-        "selected_mean_task_cost": float(realized_cost.mean()),
-        "selected_success_rate": float(realized_success.mean()),
-        "mean_regret_to_oracle": float(np.mean(realized_cost - oracle_cost)),
-        "oracle_mean_task_cost": float(oracle_cost.mean()),
+        "selected_mean_normalized_g": float(realized_g.mean()),
+        "mean_normalized_g_regret_to_oracle": float(np.mean(oracle_g - realized_g)),
+        "oracle_mean_normalized_g": float(oracle_g.mean()),
         "selection_counts": {
             f"g{allocation.resolution}_T{allocation.depth}": int(np.sum(selected == index))
             for index, allocation in enumerate(ALLOCATIONS)
@@ -357,7 +319,7 @@ def train_task_model(
         ("validation", split.validation),
         ("test", split.test),
     ):
-        success_probability, relative_cost_prediction = _predict(
+        normalized_g_prediction = _predict(
             model,
             arrays,
             context_mean=context_mean,
@@ -365,19 +327,21 @@ def train_task_model(
             device=device,
             batch_size=config.batch_size,
         )
-        predictions[f"{name}_success_probability"] = success_probability
-        predictions[f"{name}_relative_cost"] = relative_cost_prediction
+        predictions[f"{name}_normalized_g"] = normalized_g_prediction
         predictions[f"{name}_context_ids"] = arrays.context_ids
         evaluations[name] = evaluate_predictions(
             arrays,
-            success_probability=success_probability,
-            relative_cost_prediction=relative_cost_prediction,
+            normalized_g_prediction=normalized_g_prediction,
             compute_profile_ms=compute_profile,
-            success_threshold=config.success_threshold,
             compute_budget_ms=config.compute_budget_ms,
         )
 
+    schema_version = 5 if split.train.rollout_horizon > 1 else 4
     checkpoint = {
+        "schema_version": schema_version,
+        "prediction_target": split.train.label_schema,
+        "rollout_horizon": split.train.rollout_horizon,
+        "rollout_discount": split.train.rollout_discount,
         "model_state_dict": best_state,
         "spatial_channels": split.train.spatial.shape[1],
         "context_features": split.train.context.shape[1],
@@ -400,6 +364,10 @@ def train_task_model(
         writer.writerows(history)
     report = {
         "device": str(device),
+        "schema_version": schema_version,
+        "prediction_target": split.train.label_schema,
+        "rollout_horizon": split.train.rollout_horizon,
+        "rollout_discount": split.train.rollout_discount,
         "epochs_completed": len(history),
         "best_validation_loss": float(best_validation),
         "split": {

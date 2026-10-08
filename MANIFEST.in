@@ -1,0 +1,4 @@
+include requirements-paper.txt
+recursive-include docs *.md
+recursive-include artifacts/checkpoints *.pt
+recursive-include artifacts/training *.json

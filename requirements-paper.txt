@@ -1,0 +1,3 @@
+# Benchmark implementations used by the paper. Install after the local package.
+pyaif-toolkit @ git+https://github.com/Diluna98/python_active_inference.git@e86040541bfe1eff441c5347619d0c1390bd2536
+active-inference-navigation-agent @ git+https://github.com/Diluna98/active-inference-navigation-agent.git@a80409c4f0cf11d97e265d399e8df66c09bd3db6

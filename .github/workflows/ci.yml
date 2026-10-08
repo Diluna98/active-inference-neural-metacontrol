@@ -38,10 +38,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - name: Install neural package
-        run: python -m pip install --upgrade pip && python -m pip install -e ".[neural,dev]"
+      - name: Install neural package and pinned benchmark
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[neural,dev]"
+          python -m pip install -r requirements-paper.txt
       - name: Test neural forward and backward paths
-        run: pytest -q tests/test_models.py tests/test_training.py
+        run: pytest -q tests/test_models.py tests/test_training.py tests/test_meta_q.py tests/test_paper_artifacts.py
 
   mos-integration:
     runs-on: ubuntu-latest
@@ -55,6 +58,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
-          python -m pip install "active-inference-navigation-agent @ git+https://github.com/Diluna98/active-inference-navigation-agent.git@d749734fefcfcb0a9541633f2be0bd18a29a1d91"
+          python -m pip install -r requirements-paper.txt
       - name: Test MOS adapter and matched-state generator
-        run: pytest -q tests/test_mos_adapter.py tests/test_counterfactuals.py
+        run: pytest -q tests/test_mos_adapter.py tests/test_counterfactuals.py tests/test_heuristic_runtime.py tests/test_pomcp.py tests/test_fleet_throughput.py

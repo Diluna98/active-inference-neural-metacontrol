@@ -13,3 +13,9 @@ dist/
 data/generated/
 results/
 smoke-output*/
+tmp/
+output/
+pytest-cache-files-*/
+!artifacts/checkpoints/*.pt
+!artifacts/results/
+!artifacts/results/**

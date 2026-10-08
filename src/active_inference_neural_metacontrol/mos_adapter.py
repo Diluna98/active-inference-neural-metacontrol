@@ -95,7 +95,6 @@ def build_mos_features(
         found_flags=np.asarray([0.0] if found_flags is None else found_flags),
         posterior=posterior,
         policy_posterior=np.asarray(agent.posterior_pi, dtype=float),
-        expected_free_energy=np.asarray(agent.G_policy, dtype=float),
     )
     current_normalized = posterior / posterior.sum()
     predicted_normalized = predicted / predicted.sum()

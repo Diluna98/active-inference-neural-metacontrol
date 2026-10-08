@@ -19,11 +19,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--patience", type=int, default=25)
-    parser.add_argument("--success-weight", type=float, default=1.0)
-    parser.add_argument("--relative-cost-weight", type=float, default=1.0)
+    parser.add_argument("--normalized-g-weight", type=float, default=1.0)
     parser.add_argument("--ranking-weight", type=float, default=1.0)
     parser.add_argument("--ranking-temperature", type=float, default=5.0)
-    parser.add_argument("--success-threshold", type=float, default=0.5)
     parser.add_argument("--compute-budget-ms", type=float)
     parser.add_argument(
         "--timing-profile",
@@ -33,7 +31,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--validation-fraction", type=float, default=0.15)
     parser.add_argument("--test-fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--split-seed",
+        type=int,
+        help="dataset-split seed; defaults to --seed for backward compatibility",
+    )
     parser.add_argument("--device", default="auto")
+    parser.add_argument(
+        "--stratify-by-source",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="preserve source allocations across splits (disable for tiny pilot datasets)",
+    )
     return parser.parse_args()
 
 
@@ -44,7 +53,8 @@ def main() -> None:
         dataset,
         validation_fraction=args.validation_fraction,
         test_fraction=args.test_fraction,
-        seed=args.seed,
+        seed=args.seed if args.split_seed is None else args.split_seed,
+        stratify_by_source=args.stratify_by_source,
     )
     report = train_task_model(
         split,
@@ -56,11 +66,9 @@ def main() -> None:
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
             patience=args.patience,
-            success_weight=args.success_weight,
-            relative_cost_weight=args.relative_cost_weight,
+            normalized_g_weight=args.normalized_g_weight,
             ranking_weight=args.ranking_weight,
             ranking_temperature=args.ranking_temperature,
-            success_threshold=args.success_threshold,
             compute_budget_ms=args.compute_budget_ms,
             seed=args.seed,
             device=args.device,

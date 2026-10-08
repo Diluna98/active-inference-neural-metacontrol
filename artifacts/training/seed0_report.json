@@ -1,0 +1,942 @@
+{
+  "schema_version": 1,
+  "model_type": "meta_regret",
+  "transitions": 41689,
+  "split_rows": {
+    "train": 28867,
+    "validation": 6358,
+    "test": 6464
+  },
+  "split_instances": {
+    "train": 826,
+    "validation": 177,
+    "test": 177
+  },
+  "checkpoint_epoch": 100,
+  "validation": {
+    "absolute_bellman_mae": 2.186086893081665,
+    "reference_regret_mae": 0.7919418215751648,
+    "pairwise_ranking_accuracy": 0.6668376539852504
+  },
+  "test": {
+    "absolute_bellman_mae": 2.0583596229553223,
+    "reference_regret_mae": 0.6828175783157349,
+    "pairwise_ranking_accuracy": 0.66876413955423
+  },
+  "compute_profile_ms": [
+    5.353799819946289,
+    11.597399711608887,
+    93.70390319824219,
+    14.472599983215332,
+    19.69969940185547,
+    704.0440063476562,
+    50.089698791503906,
+    64.76830291748047,
+    1659.851806640625,
+    358.1138000488281,
+    789.9508056640625,
+    1565.9202880859375
+  ],
+  "history": [
+    {
+      "epoch": 1,
+      "training_loss": 0.49603036138336215,
+      "validation": {
+        "absolute_bellman_mae": 1.9756200313568115,
+        "reference_regret_mae": 0.17684794962406158,
+        "pairwise_ranking_accuracy": 0.4648462150519933
+      }
+    },
+    {
+      "epoch": 2,
+      "training_loss": 0.5157337396413879,
+      "validation": {
+        "absolute_bellman_mae": 1.9133236408233643,
+        "reference_regret_mae": 0.22909419238567352,
+        "pairwise_ranking_accuracy": 0.6248913592723597
+      }
+    },
+    {
+      "epoch": 3,
+      "training_loss": 0.5456970061744209,
+      "validation": {
+        "absolute_bellman_mae": 1.8993349075317383,
+        "reference_regret_mae": 0.22111164033412933,
+        "pairwise_ranking_accuracy": 0.6432105448087899
+      }
+    },
+    {
+      "epoch": 4,
+      "training_loss": 0.5730670550096352,
+      "validation": {
+        "absolute_bellman_mae": 1.866296648979187,
+        "reference_regret_mae": 0.2602058947086334,
+        "pairwise_ranking_accuracy": 0.7074027992752643
+      }
+    },
+    {
+      "epoch": 5,
+      "training_loss": 0.6052829805201134,
+      "validation": {
+        "absolute_bellman_mae": 1.82329261302948,
+        "reference_regret_mae": 0.27098795771598816,
+        "pairwise_ranking_accuracy": 0.8100711443252879
+      }
+    },
+    {
+      "epoch": 6,
+      "training_loss": 0.6313646388264884,
+      "validation": {
+        "absolute_bellman_mae": 1.7943105697631836,
+        "reference_regret_mae": 0.2970353066921234,
+        "pairwise_ranking_accuracy": 0.6159394135702497
+      }
+    },
+    {
+      "epoch": 7,
+      "training_loss": 0.652452065749506,
+      "validation": {
+        "absolute_bellman_mae": 1.8080246448516846,
+        "reference_regret_mae": 0.297160267829895,
+        "pairwise_ranking_accuracy": 0.6769439871840962
+      }
+    },
+    {
+      "epoch": 8,
+      "training_loss": 0.6729068600498469,
+      "validation": {
+        "absolute_bellman_mae": 1.6682326793670654,
+        "reference_regret_mae": 0.34328389167785645,
+        "pairwise_ranking_accuracy": 0.626564716229692
+      }
+    },
+    {
+      "epoch": 9,
+      "training_loss": 0.6906134879167101,
+      "validation": {
+        "absolute_bellman_mae": 1.7535151243209839,
+        "reference_regret_mae": 0.33758345246315,
+        "pairwise_ranking_accuracy": 0.7408693198720524
+      }
+    },
+    {
+      "epoch": 10,
+      "training_loss": 0.7100732633761601,
+      "validation": {
+        "absolute_bellman_mae": 1.7443017959594727,
+        "reference_regret_mae": 0.33939677476882935,
+        "pairwise_ranking_accuracy": 0.7014367154209374
+      }
+    },
+    {
+      "epoch": 11,
+      "training_loss": 0.7273327258572114,
+      "validation": {
+        "absolute_bellman_mae": 1.7219864130020142,
+        "reference_regret_mae": 0.365980327129364,
+        "pairwise_ranking_accuracy": 0.7310319925721295
+      }
+    },
+    {
+      "epoch": 12,
+      "training_loss": 0.7452955958062568,
+      "validation": {
+        "absolute_bellman_mae": 1.706939458847046,
+        "reference_regret_mae": 0.38810044527053833,
+        "pairwise_ranking_accuracy": 0.6618662756050607
+      }
+    },
+    {
+      "epoch": 13,
+      "training_loss": 0.7572014310718638,
+      "validation": {
+        "absolute_bellman_mae": 1.7181090116500854,
+        "reference_regret_mae": 0.3878093361854553,
+        "pairwise_ranking_accuracy": 0.6945207447419837
+      }
+    },
+    {
+      "epoch": 14,
+      "training_loss": 0.7771473797285451,
+      "validation": {
+        "absolute_bellman_mae": 1.6993577480316162,
+        "reference_regret_mae": 0.436065673828125,
+        "pairwise_ranking_accuracy": 0.6199226651621692
+      }
+    },
+    {
+      "epoch": 15,
+      "training_loss": 0.7898348907453824,
+      "validation": {
+        "absolute_bellman_mae": 1.7008112668991089,
+        "reference_regret_mae": 0.43093931674957275,
+        "pairwise_ranking_accuracy": 0.5612289016379812
+      }
+    },
+    {
+      "epoch": 16,
+      "training_loss": 0.806753943847344,
+      "validation": {
+        "absolute_bellman_mae": 1.7256585359573364,
+        "reference_regret_mae": 0.4455249607563019,
+        "pairwise_ranking_accuracy": 0.6343595445309205
+      }
+    },
+    {
+      "epoch": 17,
+      "training_loss": 0.829225538842446,
+      "validation": {
+        "absolute_bellman_mae": 1.7322643995285034,
+        "reference_regret_mae": 0.46545183658599854,
+        "pairwise_ranking_accuracy": 0.6333888200475448
+      }
+    },
+    {
+      "epoch": 18,
+      "training_loss": 0.8359996510290466,
+      "validation": {
+        "absolute_bellman_mae": 1.7780134677886963,
+        "reference_regret_mae": 0.4927109479904175,
+        "pairwise_ranking_accuracy": 0.582242389101374
+      }
+    },
+    {
+      "epoch": 19,
+      "training_loss": 0.8626436148069602,
+      "validation": {
+        "absolute_bellman_mae": 1.7673767805099487,
+        "reference_regret_mae": 0.5050870180130005,
+        "pairwise_ranking_accuracy": 0.6395220793590841
+      }
+    },
+    {
+      "epoch": 20,
+      "training_loss": 0.873783995751786,
+      "validation": {
+        "absolute_bellman_mae": 1.8649011850357056,
+        "reference_regret_mae": 0.5186581611633301,
+        "pairwise_ranking_accuracy": 0.6438671126725404
+      }
+    },
+    {
+      "epoch": 21,
+      "training_loss": 0.9077683423472717,
+      "validation": {
+        "absolute_bellman_mae": 1.8704676628112793,
+        "reference_regret_mae": 0.5136001706123352,
+        "pairwise_ranking_accuracy": 0.6306081338489399
+      }
+    },
+    {
+      "epoch": 22,
+      "training_loss": 0.9095714826763204,
+      "validation": {
+        "absolute_bellman_mae": 1.8770010471343994,
+        "reference_regret_mae": 0.526007354259491,
+        "pairwise_ranking_accuracy": 0.6117512042241707
+      }
+    },
+    {
+      "epoch": 23,
+      "training_loss": 0.9218955377561856,
+      "validation": {
+        "absolute_bellman_mae": 1.8885422945022583,
+        "reference_regret_mae": 0.5333735346794128,
+        "pairwise_ranking_accuracy": 0.6303152710138928
+      }
+    },
+    {
+      "epoch": 24,
+      "training_loss": 0.9331091941721672,
+      "validation": {
+        "absolute_bellman_mae": 1.9857803583145142,
+        "reference_regret_mae": 0.5488305687904358,
+        "pairwise_ranking_accuracy": 0.6388363035587104
+      }
+    },
+    {
+      "epoch": 25,
+      "training_loss": 0.9616629788569645,
+      "validation": {
+        "absolute_bellman_mae": 1.9801009893417358,
+        "reference_regret_mae": 0.5549228191375732,
+        "pairwise_ranking_accuracy": 0.6254283289146905
+      }
+    },
+    {
+      "epoch": 26,
+      "training_loss": 0.9820727219360065,
+      "validation": {
+        "absolute_bellman_mae": 2.0781142711639404,
+        "reference_regret_mae": 0.5736997723579407,
+        "pairwise_ranking_accuracy": 0.5951702596895544
+      }
+    },
+    {
+      "epoch": 27,
+      "training_loss": 0.9984579154875426,
+      "validation": {
+        "absolute_bellman_mae": 2.08396053314209,
+        "reference_regret_mae": 0.5722807049751282,
+        "pairwise_ranking_accuracy": 0.6504403259039232
+      }
+    },
+    {
+      "epoch": 28,
+      "training_loss": 0.9996189580554455,
+      "validation": {
+        "absolute_bellman_mae": 2.158977746963501,
+        "reference_regret_mae": 0.5952022671699524,
+        "pairwise_ranking_accuracy": 0.5822601501229999
+      }
+    },
+    {
+      "epoch": 29,
+      "training_loss": 1.0282923657018526,
+      "validation": {
+        "absolute_bellman_mae": 2.093019723892212,
+        "reference_regret_mae": 0.617219090461731,
+        "pairwise_ranking_accuracy": 0.5715401408395336
+      }
+    },
+    {
+      "epoch": 30,
+      "training_loss": 1.0214430381238988,
+      "validation": {
+        "absolute_bellman_mae": 2.1900506019592285,
+        "reference_regret_mae": 0.6025809645652771,
+        "pairwise_ranking_accuracy": 0.6371863649286706
+      }
+    },
+    {
+      "epoch": 31,
+      "training_loss": 1.0489623794513465,
+      "validation": {
+        "absolute_bellman_mae": 2.133068799972534,
+        "reference_regret_mae": 0.6154903769493103,
+        "pairwise_ranking_accuracy": 0.6716087333490975
+      }
+    },
+    {
+      "epoch": 32,
+      "training_loss": 1.042452714084524,
+      "validation": {
+        "absolute_bellman_mae": 2.260319948196411,
+        "reference_regret_mae": 0.6193157434463501,
+        "pairwise_ranking_accuracy": 0.6530475938532136
+      }
+    },
+    {
+      "epoch": 33,
+      "training_loss": 1.0750749485682598,
+      "validation": {
+        "absolute_bellman_mae": 2.1563053131103516,
+        "reference_regret_mae": 0.6454916000366211,
+        "pairwise_ranking_accuracy": 0.5910555715641514
+      }
+    },
+    {
+      "epoch": 34,
+      "training_loss": 1.0570048344346274,
+      "validation": {
+        "absolute_bellman_mae": 2.200723171234131,
+        "reference_regret_mae": 0.6196094155311584,
+        "pairwise_ranking_accuracy": 0.6294385176274442
+      }
+    },
+    {
+      "epoch": 35,
+      "training_loss": 1.0748379594456834,
+      "validation": {
+        "absolute_bellman_mae": 2.291980504989624,
+        "reference_regret_mae": 0.6439256072044373,
+        "pairwise_ranking_accuracy": 0.6715767890526471
+      }
+    },
+    {
+      "epoch": 36,
+      "training_loss": 1.0870954597418288,
+      "validation": {
+        "absolute_bellman_mae": 2.2320289611816406,
+        "reference_regret_mae": 0.6473329663276672,
+        "pairwise_ranking_accuracy": 0.6692607817363149
+      }
+    },
+    {
+      "epoch": 37,
+      "training_loss": 1.0826764974446423,
+      "validation": {
+        "absolute_bellman_mae": 2.207247018814087,
+        "reference_regret_mae": 0.6622604727745056,
+        "pairwise_ranking_accuracy": 0.6707600493501277
+      }
+    },
+    {
+      "epoch": 38,
+      "training_loss": 1.0837058904951653,
+      "validation": {
+        "absolute_bellman_mae": 2.2607338428497314,
+        "reference_regret_mae": 0.6663207411766052,
+        "pairwise_ranking_accuracy": 0.6324020789572615
+      }
+    },
+    {
+      "epoch": 39,
+      "training_loss": 1.0791773562673974,
+      "validation": {
+        "absolute_bellman_mae": 2.1556942462921143,
+        "reference_regret_mae": 0.6583031415939331,
+        "pairwise_ranking_accuracy": 0.6645422943221321
+      }
+    },
+    {
+      "epoch": 40,
+      "training_loss": 1.0878447070058468,
+      "validation": {
+        "absolute_bellman_mae": 2.2294228076934814,
+        "reference_regret_mae": 0.6970142126083374,
+        "pairwise_ranking_accuracy": 0.662798060852685
+      }
+    },
+    {
+      "epoch": 41,
+      "training_loss": 1.096871079596798,
+      "validation": {
+        "absolute_bellman_mae": 2.1913394927978516,
+        "reference_regret_mae": 0.6837542653083801,
+        "pairwise_ranking_accuracy": 0.6508194133894515
+      }
+    },
+    {
+      "epoch": 42,
+      "training_loss": 1.1249838273609634,
+      "validation": {
+        "absolute_bellman_mae": 2.2380735874176025,
+        "reference_regret_mae": 0.699551522731781,
+        "pairwise_ranking_accuracy": 0.6350904462851301
+      }
+    },
+    {
+      "epoch": 43,
+      "training_loss": 1.1084458069727483,
+      "validation": {
+        "absolute_bellman_mae": 2.2219417095184326,
+        "reference_regret_mae": 0.6973827481269836,
+        "pairwise_ranking_accuracy": 0.5977922599536167
+      }
+    },
+    {
+      "epoch": 44,
+      "training_loss": 1.093902713957086,
+      "validation": {
+        "absolute_bellman_mae": 2.2205703258514404,
+        "reference_regret_mae": 0.6896312236785889,
+        "pairwise_ranking_accuracy": 0.6378384739092348
+      }
+    },
+    {
+      "epoch": 45,
+      "training_loss": 1.1183637930492385,
+      "validation": {
+        "absolute_bellman_mae": 2.236528158187866,
+        "reference_regret_mae": 0.6785216331481934,
+        "pairwise_ranking_accuracy": 0.6430338393397049
+      }
+    },
+    {
+      "epoch": 46,
+      "training_loss": 1.1355767078631747,
+      "validation": {
+        "absolute_bellman_mae": 2.3422043323516846,
+        "reference_regret_mae": 0.7172144651412964,
+        "pairwise_ranking_accuracy": 0.6313083377031987
+      }
+    },
+    {
+      "epoch": 47,
+      "training_loss": 1.1199629797344715,
+      "validation": {
+        "absolute_bellman_mae": 2.320040464401245,
+        "reference_regret_mae": 0.7088114023208618,
+        "pairwise_ranking_accuracy": 0.6355296745373324
+      }
+    },
+    {
+      "epoch": 48,
+      "training_loss": 1.1179542087875636,
+      "validation": {
+        "absolute_bellman_mae": 2.235146999359131,
+        "reference_regret_mae": 0.6982701420783997,
+        "pairwise_ranking_accuracy": 0.6471448723999551
+      }
+    },
+    {
+      "epoch": 49,
+      "training_loss": 1.1047286590379952,
+      "validation": {
+        "absolute_bellman_mae": 2.2386889457702637,
+        "reference_regret_mae": 0.756718099117279,
+        "pairwise_ranking_accuracy": 0.6198711800806042
+      }
+    },
+    {
+      "epoch": 50,
+      "training_loss": 1.120580883152717,
+      "validation": {
+        "absolute_bellman_mae": 2.2030608654022217,
+        "reference_regret_mae": 0.708614706993103,
+        "pairwise_ranking_accuracy": 0.6632982959904424
+      }
+    },
+    {
+      "epoch": 51,
+      "training_loss": 1.115705514112405,
+      "validation": {
+        "absolute_bellman_mae": 2.3003203868865967,
+        "reference_regret_mae": 0.7169097661972046,
+        "pairwise_ranking_accuracy": 0.6236745366937502
+      }
+    },
+    {
+      "epoch": 52,
+      "training_loss": 1.112335783981644,
+      "validation": {
+        "absolute_bellman_mae": 2.241335868835449,
+        "reference_regret_mae": 0.7089439034461975,
+        "pairwise_ranking_accuracy": 0.645028307733975
+      }
+    },
+    {
+      "epoch": 53,
+      "training_loss": 1.1205296476857851,
+      "validation": {
+        "absolute_bellman_mae": 2.433169364929199,
+        "reference_regret_mae": 0.7523475885391235,
+        "pairwise_ranking_accuracy": 0.6604919130618317
+      }
+    },
+    {
+      "epoch": 54,
+      "training_loss": 1.1344829259720524,
+      "validation": {
+        "absolute_bellman_mae": 2.2558064460754395,
+        "reference_regret_mae": 0.7338293194770813,
+        "pairwise_ranking_accuracy": 0.6986174071299679
+      }
+    },
+    {
+      "epoch": 55,
+      "training_loss": 1.1104862120299213,
+      "validation": {
+        "absolute_bellman_mae": 2.3678178787231445,
+        "reference_regret_mae": 0.7359017133712769,
+        "pairwise_ranking_accuracy": 0.6595264082249077
+      }
+    },
+    {
+      "epoch": 56,
+      "training_loss": 1.1652768499555841,
+      "validation": {
+        "absolute_bellman_mae": 2.2085397243499756,
+        "reference_regret_mae": 0.720562219619751,
+        "pairwise_ranking_accuracy": 0.6560878971926074
+      }
+    },
+    {
+      "epoch": 57,
+      "training_loss": 1.1279832356798964,
+      "validation": {
+        "absolute_bellman_mae": 2.174316883087158,
+        "reference_regret_mae": 0.7219724655151367,
+        "pairwise_ranking_accuracy": 0.6544374626986258
+      }
+    },
+    {
+      "epoch": 58,
+      "training_loss": 1.1268740852849672,
+      "validation": {
+        "absolute_bellman_mae": 2.232805013656616,
+        "reference_regret_mae": 0.7396093010902405,
+        "pairwise_ranking_accuracy": 0.6589221606806968
+      }
+    },
+    {
+      "epoch": 59,
+      "training_loss": 1.143501684728977,
+      "validation": {
+        "absolute_bellman_mae": 2.2623701095581055,
+        "reference_regret_mae": 0.7424750328063965,
+        "pairwise_ranking_accuracy": 0.6491408863525732
+      }
+    },
+    {
+      "epoch": 60,
+      "training_loss": 1.1263804704742093,
+      "validation": {
+        "absolute_bellman_mae": 2.4360084533691406,
+        "reference_regret_mae": 0.7661621570587158,
+        "pairwise_ranking_accuracy": 0.6555232821767171
+      }
+    },
+    {
+      "epoch": 61,
+      "training_loss": 1.1336503071067607,
+      "validation": {
+        "absolute_bellman_mae": 2.213589906692505,
+        "reference_regret_mae": 0.7418039441108704,
+        "pairwise_ranking_accuracy": 0.6396011580619827
+      }
+    },
+    {
+      "epoch": 62,
+      "training_loss": 1.096554982451211,
+      "validation": {
+        "absolute_bellman_mae": 2.2724928855895996,
+        "reference_regret_mae": 0.7727323770523071,
+        "pairwise_ranking_accuracy": 0.6704647715155141
+      }
+    },
+    {
+      "epoch": 63,
+      "training_loss": 1.1424889875724253,
+      "validation": {
+        "absolute_bellman_mae": 2.2645397186279297,
+        "reference_regret_mae": 0.7492886185646057,
+        "pairwise_ranking_accuracy": 0.6597659047236346
+      }
+    },
+    {
+      "epoch": 64,
+      "training_loss": 1.1276272920380652,
+      "validation": {
+        "absolute_bellman_mae": 2.293660879135132,
+        "reference_regret_mae": 0.7841129899024963,
+        "pairwise_ranking_accuracy": 0.6813678606875395
+      }
+    },
+    {
+      "epoch": 65,
+      "training_loss": 1.1765194684267044,
+      "validation": {
+        "absolute_bellman_mae": 2.195343494415283,
+        "reference_regret_mae": 0.7475131154060364,
+        "pairwise_ranking_accuracy": 0.6811229716439928
+      }
+    },
+    {
+      "epoch": 66,
+      "training_loss": 1.1330091452176592,
+      "validation": {
+        "absolute_bellman_mae": 2.2102715969085693,
+        "reference_regret_mae": 0.7605038285255432,
+        "pairwise_ranking_accuracy": 0.671931645648065
+      }
+    },
+    {
+      "epoch": 67,
+      "training_loss": 1.1104982031130157,
+      "validation": {
+        "absolute_bellman_mae": 2.3079895973205566,
+        "reference_regret_mae": 0.7735748291015625,
+        "pairwise_ranking_accuracy": 0.6867748942788467
+      }
+    },
+    {
+      "epoch": 68,
+      "training_loss": 1.1470630184739037,
+      "validation": {
+        "absolute_bellman_mae": 2.284001588821411,
+        "reference_regret_mae": 0.7710822820663452,
+        "pairwise_ranking_accuracy": 0.666526598007244
+      }
+    },
+    {
+      "epoch": 69,
+      "training_loss": 1.102044418586039,
+      "validation": {
+        "absolute_bellman_mae": 2.210665464401245,
+        "reference_regret_mae": 0.7644789814949036,
+        "pairwise_ranking_accuracy": 0.6710523272102007
+      }
+    },
+    {
+      "epoch": 70,
+      "training_loss": 1.1489548113493793,
+      "validation": {
+        "absolute_bellman_mae": 2.255964756011963,
+        "reference_regret_mae": 0.7654751539230347,
+        "pairwise_ranking_accuracy": 0.6597965269251008
+      }
+    },
+    {
+      "epoch": 71,
+      "training_loss": 1.1355893981140273,
+      "validation": {
+        "absolute_bellman_mae": 2.2624142169952393,
+        "reference_regret_mae": 0.7904211282730103,
+        "pairwise_ranking_accuracy": 0.6709925480035787
+      }
+    },
+    {
+      "epoch": 72,
+      "training_loss": 1.1460661120646822,
+      "validation": {
+        "absolute_bellman_mae": 2.2097880840301514,
+        "reference_regret_mae": 0.7787955403327942,
+        "pairwise_ranking_accuracy": 0.6888802502256993
+      }
+    },
+    {
+      "epoch": 73,
+      "training_loss": 1.107164415901741,
+      "validation": {
+        "absolute_bellman_mae": 2.246607780456543,
+        "reference_regret_mae": 0.7738015055656433,
+        "pairwise_ranking_accuracy": 0.6745126894313278
+      }
+    },
+    {
+      "epoch": 74,
+      "training_loss": 1.1175958991578194,
+      "validation": {
+        "absolute_bellman_mae": 2.3051419258117676,
+        "reference_regret_mae": 0.7931009531021118,
+        "pairwise_ranking_accuracy": 0.6397703535683621
+      }
+    },
+    {
+      "epoch": 75,
+      "training_loss": 1.1320817229230846,
+      "validation": {
+        "absolute_bellman_mae": 2.3508434295654297,
+        "reference_regret_mae": 0.8122739791870117,
+        "pairwise_ranking_accuracy": 0.6548740919846657
+      }
+    },
+    {
+      "epoch": 76,
+      "training_loss": 1.1147439123782437,
+      "validation": {
+        "absolute_bellman_mae": 2.249965190887451,
+        "reference_regret_mae": 0.7874630689620972,
+        "pairwise_ranking_accuracy": 0.6934454480780146
+      }
+    },
+    {
+      "epoch": 77,
+      "training_loss": 1.1152033681890605,
+      "validation": {
+        "absolute_bellman_mae": 2.2570319175720215,
+        "reference_regret_mae": 0.7784438133239746,
+        "pairwise_ranking_accuracy": 0.6735654172805603
+      }
+    },
+    {
+      "epoch": 78,
+      "training_loss": 1.1215194170981382,
+      "validation": {
+        "absolute_bellman_mae": 2.341496467590332,
+        "reference_regret_mae": 0.813030481338501,
+        "pairwise_ranking_accuracy": 0.6121515412010315
+      }
+    },
+    {
+      "epoch": 79,
+      "training_loss": 1.1248055583080359,
+      "validation": {
+        "absolute_bellman_mae": 2.2397966384887695,
+        "reference_regret_mae": 0.7838621139526367,
+        "pairwise_ranking_accuracy": 0.656527358226153
+      }
+    },
+    {
+      "epoch": 80,
+      "training_loss": 1.118557218692999,
+      "validation": {
+        "absolute_bellman_mae": 2.167299509048462,
+        "reference_regret_mae": 0.7842240333557129,
+        "pairwise_ranking_accuracy": 0.642198857736241
+      }
+    },
+    {
+      "epoch": 81,
+      "training_loss": 1.1284547205519888,
+      "validation": {
+        "absolute_bellman_mae": 2.309426784515381,
+        "reference_regret_mae": 0.7976846694946289,
+        "pairwise_ranking_accuracy": 0.6817999020391328
+      }
+    },
+    {
+      "epoch": 82,
+      "training_loss": 1.1600241405246532,
+      "validation": {
+        "absolute_bellman_mae": 2.2354838848114014,
+        "reference_regret_mae": 0.772006630897522,
+        "pairwise_ranking_accuracy": 0.6925081064970169
+      }
+    },
+    {
+      "epoch": 83,
+      "training_loss": 1.1042243914794079,
+      "validation": {
+        "absolute_bellman_mae": 2.330688714981079,
+        "reference_regret_mae": 0.8153760433197021,
+        "pairwise_ranking_accuracy": 0.6574848098087085
+      }
+    },
+    {
+      "epoch": 84,
+      "training_loss": 1.1359351483066524,
+      "validation": {
+        "absolute_bellman_mae": 2.3332769870758057,
+        "reference_regret_mae": 0.8100371360778809,
+        "pairwise_ranking_accuracy": 0.6760365370973878
+      }
+    },
+    {
+      "epoch": 85,
+      "training_loss": 1.1735372907292527,
+      "validation": {
+        "absolute_bellman_mae": 2.241910934448242,
+        "reference_regret_mae": 0.7885925769805908,
+        "pairwise_ranking_accuracy": 0.6647760389251922
+      }
+    },
+    {
+      "epoch": 86,
+      "training_loss": 1.1250019806676206,
+      "validation": {
+        "absolute_bellman_mae": 2.187305212020874,
+        "reference_regret_mae": 0.814130425453186,
+        "pairwise_ranking_accuracy": 0.6588911009254543
+      }
+    },
+    {
+      "epoch": 87,
+      "training_loss": 1.1153822063872245,
+      "validation": {
+        "absolute_bellman_mae": 2.400827646255493,
+        "reference_regret_mae": 0.8474752306938171,
+        "pairwise_ranking_accuracy": 0.6751804297601767
+      }
+    },
+    {
+      "epoch": 88,
+      "training_loss": 1.1566617836994408,
+      "validation": {
+        "absolute_bellman_mae": 2.319204568862915,
+        "reference_regret_mae": 0.8277698755264282,
+        "pairwise_ranking_accuracy": 0.6822982829067118
+      }
+    },
+    {
+      "epoch": 89,
+      "training_loss": 1.1206202609876617,
+      "validation": {
+        "absolute_bellman_mae": 2.221862554550171,
+        "reference_regret_mae": 0.7887014746665955,
+        "pairwise_ranking_accuracy": 0.6814471827469017
+      }
+    },
+    {
+      "epoch": 90,
+      "training_loss": 1.1052915356328001,
+      "validation": {
+        "absolute_bellman_mae": 2.2290618419647217,
+        "reference_regret_mae": 0.8148443102836609,
+        "pairwise_ranking_accuracy": 0.6793848034222856
+      }
+    },
+    {
+      "epoch": 91,
+      "training_loss": 1.1138948618838218,
+      "validation": {
+        "absolute_bellman_mae": 2.3093154430389404,
+        "reference_regret_mae": 0.8219159245491028,
+        "pairwise_ranking_accuracy": 0.6546166934880431
+      }
+    },
+    {
+      "epoch": 92,
+      "training_loss": 1.1318712674938471,
+      "validation": {
+        "absolute_bellman_mae": 2.263798952102661,
+        "reference_regret_mae": 0.8127486109733582,
+        "pairwise_ranking_accuracy": 0.647229150906749
+      }
+    },
+    {
+      "epoch": 93,
+      "training_loss": 1.096077652895345,
+      "validation": {
+        "absolute_bellman_mae": 2.2667062282562256,
+        "reference_regret_mae": 0.807820737361908,
+        "pairwise_ranking_accuracy": 0.6816556096688013
+      }
+    },
+    {
+      "epoch": 94,
+      "training_loss": 1.1249660213964174,
+      "validation": {
+        "absolute_bellman_mae": 2.3116397857666016,
+        "reference_regret_mae": 0.8310278654098511,
+        "pairwise_ranking_accuracy": 0.676563152480572
+      }
+    },
+    {
+      "epoch": 95,
+      "training_loss": 1.1085238000460431,
+      "validation": {
+        "absolute_bellman_mae": 2.197862148284912,
+        "reference_regret_mae": 0.7990925908088684,
+        "pairwise_ranking_accuracy": 0.65684451071112
+      }
+    },
+    {
+      "epoch": 96,
+      "training_loss": 1.1044115374046088,
+      "validation": {
+        "absolute_bellman_mae": 2.253047227859497,
+        "reference_regret_mae": 0.804882824420929,
+        "pairwise_ranking_accuracy": 0.6600720348562386
+      }
+    },
+    {
+      "epoch": 97,
+      "training_loss": 1.0958119406636837,
+      "validation": {
+        "absolute_bellman_mae": 2.257887125015259,
+        "reference_regret_mae": 0.8181203007698059,
+        "pairwise_ranking_accuracy": 0.6878034614346051
+      }
+    },
+    {
+      "epoch": 98,
+      "training_loss": 1.0887766187697385,
+      "validation": {
+        "absolute_bellman_mae": 2.2680728435516357,
+        "reference_regret_mae": 0.8127118349075317,
+        "pairwise_ranking_accuracy": 0.6503244005641748
+      }
+    },
+    {
+      "epoch": 99,
+      "training_loss": 1.0949248473728652,
+      "validation": {
+        "absolute_bellman_mae": 2.2558391094207764,
+        "reference_regret_mae": 0.8140428066253662,
+        "pairwise_ranking_accuracy": 0.6719344566837812
+      }
+    },
+    {
+      "epoch": 100,
+      "training_loss": 1.1006108767690912,
+      "validation": {
+        "absolute_bellman_mae": 2.186086893081665,
+        "reference_regret_mae": 0.7919418215751648,
+        "pairwise_ranking_accuracy": 0.6668376539852504
+      }
+    }
+  ]
+}

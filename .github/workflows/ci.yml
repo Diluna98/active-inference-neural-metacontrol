@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
-          python -m pip install -r requirements-paper.txt
+          python -m pip install -r requirements-benchmark.txt
       - name: Lint and format
         run: ruff check . && ruff format --check .
       - name: Test
@@ -45,9 +45,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[neural,dev]"
-          python -m pip install -r requirements-paper.txt
+          python -m pip install -r requirements-benchmark.txt
       - name: Test neural forward and backward paths
-        run: pytest -q tests/test_models.py tests/test_training.py tests/test_meta_q.py tests/test_paper_artifacts.py
+        run: pytest -q tests/test_models.py tests/test_training.py tests/test_meta_q.py tests/test_reference_artifacts.py
 
   mos-integration:
     runs-on: ubuntu-latest
@@ -61,6 +61,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
-          python -m pip install -r requirements-paper.txt
+          python -m pip install -r requirements-benchmark.txt
       - name: Test MOS adapter and matched-state generator
         run: pytest -q tests/test_mos_adapter.py tests/test_counterfactuals.py tests/test_heuristic_runtime.py tests/test_pomcp.py tests/test_fleet_throughput.py

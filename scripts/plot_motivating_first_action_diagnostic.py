@@ -27,7 +27,7 @@ PDF_OUTPUT = ROOT / "output" / "pdf" / "figure_motivating_first_action_diagnosti
 PNG_OUTPUT = ROOT / "output" / "png" / "figure_motivating_first_action_diagnostic.png"
 SVG_OUTPUT = ROOT / "output" / "svg" / "figure_motivating_first_action_diagnostic.svg"
 
-# Same color-blind-safe design language used by the paper's results figures.
+# Consistent color-blind-safe palette across benchmark figures.
 BLUE = "#0072B2"
 ORANGE = "#D55E00"
 GREEN = "#009E73"

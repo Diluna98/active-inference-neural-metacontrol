@@ -21,7 +21,7 @@ def select(successful_only=False, require_depth_decrease=False):
     rule = dict(RULE)
     if successful_only:
         rule["population"] = (
-            "Successful episodes only (84 of the 100 frozen paper-test episodes); global quartile thresholds remain those of all 100 episodes."
+            "Successful episodes only (84 of the 100 frozen benchmark episodes); global quartile thresholds remain those of all 100 episodes."
         )
         rule["exclusions"] = (
             "Exclude failed episodes solely to illustrate successful behaviour. No filtering on allocation choices, shape, or conformity to trends."

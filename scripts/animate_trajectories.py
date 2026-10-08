@@ -1,4 +1,4 @@
-"""Animate saved paper trajectories without rerunning the controller."""
+"""Animate saved evaluation trajectories without rerunning the controller."""
 
 from __future__ import annotations
 

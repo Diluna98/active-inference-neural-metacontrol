@@ -1,4 +1,4 @@
-"""Clean, explicitly readability-selected illustrations of frozen test runs."""
+"""Clean, explicitly readability-selected illustrations of saved test runs."""
 
 import ast
 import itertools

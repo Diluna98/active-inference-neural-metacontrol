@@ -1,19 +1,18 @@
-# Resource-Rational Metacontrol of Belief Resolution and Planning Depth
+# Active Inference Neural Metacontrol
 
-Reference implementation for **Resource-Rational Metacontrol of Belief Resolution
-and Planning Depth**. A frozen CNN-MLP ensemble selects computational allocations
-for filtered receding-horizon Active Inference in randomized single-target 2D
-object search.
+Learn to adapt belief resolution and planning depth during object search.
+This Python toolkit provides neural metacontrol, training and evaluation tools,
+and planning baselines for filtered receding-horizon Active Inference in
+randomized single-target 2D environments.
 
 ![Adaptive object-search trajectories](artifacts/media/adaptive_search.gif)
 
-Recorded paper episodes 20088 and 20045. Path color shows belief resolution
+Example episodes 20088 and 20045. Path color shows belief resolution
 ($\gamma$); the robot marker shape shows planning depth ($\tau$). White rings
 mark allocation changes. Playback is slowed, and the target is shown only for
-visualization. These are the same context-coverage examples used in the trajectory
-figure, not additional evaluation runs.
+visualization. The animation replays saved evaluation traces.
 
-## Method
+## How it works
 
 The physical workspace is 20 x 20. Target-belief resolution is
 `gamma in {2, 5, 10, 20}`; prospective action depth is `T in {1, 2, 3}`.
@@ -48,14 +47,14 @@ python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # PowerShell: .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[neural,dev,figures]"
-python -m pip install -r requirements-paper.txt
+python -m pip install -r requirements-benchmark.txt
 ```
 
 The pinned navigation dependency supplies MOS; the pinned PyAIF dependency
 supplies inference. PyTorch is optional for NumPy-only utilities but required
 for training and the learned controller.
 
-## Run the published controller
+## Run a pretrained controller
 
 Three reference checkpoints are included in `artifacts/checkpoints/`.
 Load only trusted checkpoints: PyTorch checkpoints contain serialized Python
@@ -69,11 +68,11 @@ The CLI prices milliseconds; `--compute-price 0.001` corresponds to a coefficien
 of 1 per second. The 50-ms switching proxy produces a fixed 0.05-unit penalty;
 it is not a measurement of every switch.
 
-See [reproduction commands](docs/reproduction.md) for generation, ensemble
+See the [training and evaluation guide](docs/reproduction.md) for generation, ensemble
 training, the 100-instance benchmark, baselines, ablations, fleet scheduling,
 and figures.
 
-## Reference results
+## Benchmark results
 
 Evaluation uses seeds 20000-20099 and single-worker profiling. Timing is
 hardware-specific, not a latency guarantee.
@@ -106,8 +105,9 @@ independent search agents, not cooperative search or physical robots.
 - `tests/`: unit and integration tests.
 
 Modules reside in `src/active_inference_neural_metacontrol/`. Additional
-diagnostic/training tools are research utilities; the paper pipeline uses the
-meta-regret modules documented above. Large training tensors and generated
+diagnostic/training tools support alternative training objectives and analysis;
+the pretrained controller uses the meta-regret modules documented above.
+Large training tensors and generated
 runs are not tracked in Git.
 
 ## Development

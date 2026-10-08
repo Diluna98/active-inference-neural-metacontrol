@@ -34,9 +34,7 @@ predicted task regret
 + 0.8 * normalized Jensen-Shannon belief-transfer loss
 ```
 
-Computation is immediate inference and policy-evaluation latency, not a learned
-trajectory-wide cost. Task return is learned from operational rewards, not
-one-step expected free energy. See [method details](docs/method.md).
+See [method details](docs/method.md).
 
 ## Installation
 

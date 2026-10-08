@@ -96,7 +96,7 @@ even when the candidate has more cells.
 
 The cost profile is stored separately in each checkpoint and is not a learned
 output head. Recalibrate for another machine; timings collected with concurrent
-generation workers can be load-contaminated. Reported paper timings are from
+generation workers can be load-contaminated. Included benchmark timings are from
 single-worker profiling, not the checkpoint's candidate-profile calibration.
 
 All 12 agent shells and their static models are built before the measured loop.

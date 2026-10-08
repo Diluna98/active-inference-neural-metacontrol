@@ -11,8 +11,8 @@ from active_inference_navigation.mos import sample_mos_instance
 from inspect_trajectory_candidates import load
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch, Rectangle
+from plot_clean_trajectories import place_labels
 from plot_figure6_controller_behavior import RESOLUTION_COLORS, ROOT, _allocation
-from plot_paper_clean_trajectories import place_labels
 from select_context_coverage_examples import select
 
 

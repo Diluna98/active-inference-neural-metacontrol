@@ -1,11 +1,11 @@
-# Reproduction
+# Training and evaluation
 
 Run commands from the repository root after the installation in README.
 PowerShell commands are single-line to avoid continuation-character problems.
 Use Python module commands on any supported shell; range syntax below is
 PowerShell-specific. Generated outputs go to the ignored results directory.
 
-## Published artifacts
+## Included artifacts
 
 - artifacts/checkpoints/seed0.pt, seed1.pt, seed2.pt: frozen value ensemble.
 - artifacts/training/: generation manifest, corpus summary and training reports.
@@ -15,7 +15,7 @@ PowerShell-specific. Generated outputs go to the ignored results directory.
 Large transitions.npz tensors are not included. Regenerate them with the
 collection command below. Sampling and numeric versions can affect exact
 trajectory reproduction; wall-clock measurements always depend on hardware.
-Pinned dependency revisions are in requirements-paper.txt.
+Pinned dependency revisions are in requirements-benchmark.txt.
 
 ## Data collection
 
@@ -43,7 +43,7 @@ This runs the frozen objective on all test seeds and all 12 fixed allocations.
 One instance worker is used for interpretable timing.
 
 ```powershell
-python -m active_inference_neural_metacontrol.meta_q_evaluate_cli --checkpoint artifacts/checkpoints/seed0.pt --ensemble-checkpoints artifacts/checkpoints/seed1.pt artifacts/checkpoints/seed2.pt --instance-seeds (20000..20099) --initial-resolution 2 --initial-depth 1 --max-steps 50 --message-passing-iterations 10 --policy-workers 1 --selection-mode joint --compute-price 0.001 --compute-weight 1 --switch-cost-ms 50 --switching-weight 1 --switch-penalty-mode allocation --information-loss-weight 0.8 --uncertainty-beta 0.5 --torch-threads 1 --instance-workers 1 --include-fixed --output-dir results/paper_evaluation
+python -m active_inference_neural_metacontrol.meta_q_evaluate_cli --checkpoint artifacts/checkpoints/seed0.pt --ensemble-checkpoints artifacts/checkpoints/seed1.pt artifacts/checkpoints/seed2.pt --instance-seeds (20000..20099) --initial-resolution 2 --initial-depth 1 --max-steps 50 --message-passing-iterations 10 --policy-workers 1 --selection-mode joint --compute-price 0.001 --compute-weight 1 --switch-cost-ms 50 --switching-weight 1 --switch-penalty-mode allocation --information-loss-weight 0.8 --uncertainty-beta 0.5 --torch-threads 1 --instance-workers 1 --include-fixed --output-dir results/benchmark_evaluation
 ```
 
 The initial fixed allocations stay fixed; adaptive selection is reconsidered
@@ -94,7 +94,7 @@ python scripts/plot_figure4_task_compute_pareto.py
 python scripts/plot_figure6_context_profiles.py
 python scripts/plot_figure6_regularization_ablation.py
 python scripts/plot_trajectory_allocation_timelines.py --maps-only
-python scripts/animate_paper_trajectories.py
+python scripts/animate_trajectories.py
 python scripts/plot_fleet_throughput.py --trials artifacts/results/fleet_capacity_30s_1core/fleet_trials.csv --output output/pdf/fleet_throughput.pdf
 ```
 

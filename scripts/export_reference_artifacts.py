@@ -81,7 +81,7 @@ def main():
             args.source_repo / f"results/meta_regret_large_1200_seed{seed}/training_report.json",
             ROOT / "artifacts/training" / f"seed{seed}_report.json",
         )
-    print("Exported paper results, context traces, fleet trials, and training metadata.")
+    print("Exported benchmark results, context traces, fleet trials, and training metadata.")
 
 
 if __name__ == "__main__":

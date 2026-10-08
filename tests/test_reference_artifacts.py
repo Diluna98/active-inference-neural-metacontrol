@@ -1,4 +1,4 @@
-"""Validate the bundled controller against a frozen paper episode."""
+"""Validate the bundled controller against a frozen reference episode."""
 
 from pathlib import Path
 
@@ -15,7 +15,7 @@ from active_inference_neural_metacontrol.meta_q_runtime import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_published_ensemble_reproduces_reference_episode():
+def test_pretrained_ensemble_reproduces_reference_episode():
     checkpoints = ROOT / "artifacts/checkpoints"
     config = MetaQEvaluationConfig(
         checkpoint=checkpoints / "seed0.pt",

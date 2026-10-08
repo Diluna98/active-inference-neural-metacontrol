@@ -94,6 +94,7 @@ python scripts/plot_figure4_task_compute_pareto.py
 python scripts/plot_figure6_context_profiles.py
 python scripts/plot_figure6_regularization_ablation.py
 python scripts/plot_trajectory_allocation_timelines.py --maps-only
+python scripts/animate_paper_trajectories.py
 python scripts/plot_fleet_throughput.py --trials artifacts/results/fleet_capacity_30s_1core/fleet_trials.csv --output output/pdf/fleet_throughput.pdf
 ```
 

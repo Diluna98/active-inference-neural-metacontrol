@@ -5,6 +5,14 @@ and Planning Depth**. A frozen CNN-MLP ensemble selects computational allocation
 for filtered receding-horizon Active Inference in randomized single-target 2D
 object search.
 
+![Adaptive object-search trajectories](artifacts/media/adaptive_search.gif)
+
+Recorded paper episodes 20088 and 20045. Path color shows belief resolution
+($\gamma$); the robot marker shape shows planning depth ($\tau$). White rings
+mark allocation changes. Playback is slowed, and the target is shown only for
+visualization. These are the same context-coverage examples used in the trajectory
+figure, not additional evaluation runs.
+
 ## Method
 
 The physical workspace is 20 x 20. Target-belief resolution is
